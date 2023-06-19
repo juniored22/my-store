@@ -19,5 +19,8 @@
   "homepage": "https://github.com/fly-examples/hellonode#readme",
   "dependencies": {
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.2.14"
   }
 }
