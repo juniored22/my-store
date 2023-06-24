@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for cold-rain-2283 on 2023-06-08T16:56:00-03:00
+# fly.toml app configuration file generated for my-master-application on 2023-06-24T11:21:06-03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "cold-rain-2283"
+app = "my-master-application"
 primary_region = "gru"
 
 [http_service]
