@@ -40,7 +40,24 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkb
 - /routes
   - index.js
 - app.js
+[
+
+### Token httpOnly 
+
+![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/token-in-httpOnly.png)
 
 
+### Crypto 
 
-![Texto alternativo](public/img/token-jwt.png" alt="token-jwt.png)
+![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/cryptografia.png)
+
+
+### Token JWT 
+
+![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/token-jwt.png)
+
+
+### Token JWT 
+
+![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/varial-ambiente.png)
+

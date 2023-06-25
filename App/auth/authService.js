@@ -3,7 +3,8 @@ const {compareHash} = require('../hash/hashController');
 
 const authenticate = async (username, password) => {
     const user = await getUserByEmail(username);
-    const checkHash = compareHash(password, user.password);
+   
+    const checkHash = compareHash(password, user?.password);
 
     return checkHash.same;
 };
