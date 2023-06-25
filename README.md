@@ -43,4 +43,4 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkb
 [
 
 
-![[Texto alternativo]([public/img/token-jwt.png" alt="token-jwt.png](https://github.com/juniored22/my-store/blob/master/public/img/token-in-httpOnly.png)
+![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/token-in-httpOnly.png)
