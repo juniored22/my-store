@@ -1,6 +1,6 @@
-# hellonode
+# Portfolio
 
-## A Fly Example
+## My-master-aplication
 
 This is a simple application used in the [fly.io Getting Started](https://fly.io/docs/getting-started/node/)  documentation showing how to deploy a Node application using Flyctl's builtin Nodejs deployment option.
 
@@ -9,7 +9,7 @@ This is a simple application used in the [fly.io Getting Started](https://fly.io
 * Run flyctl deploy
 
 ### Generate-token
-´´´http
+```http
 
 POST /generate-token HTTP/1.1
 Host: localhost:3000
@@ -20,16 +20,16 @@ Content-Length: 58
     "username": "admin",
     "password": "password123"
 }
-´´´
+```
 
 ### Authorization
 
-´´´http
+```http
 GET /protected HTTP/1.1
 Host: localhost:3000
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicGFzc3dvcmQiOiJwYXNzd29yZDEyMyIsImlhdCI6MTY4NzYxOTkwNCwiZXhwIjoxNjg3NjIzNTA0fQ.wBgpkLYHrtbkkGp32I2yoI2Exp9hmLi5OwSGyGDdn4w
-´´´
-
+```
+### Structure
 - /controllers
   - tokenController.js
   - protectedController.js
@@ -41,3 +41,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkb
   - index.js
 - app.js
 
+
+
+![Texto alternativo](public/img/token-jwt.png" alt="token-jwt.png)

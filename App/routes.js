@@ -1,33 +1,27 @@
 const express = require("express");
-const path = require('path');
 const validateToken = require('./middlewares/validateToken');
-const { generateTokenHandler } = require('./controllers/tokenController');
-const { getProtectedData } = require('./controllers/protectedController');
-
+const { generateTokenHandler } = require('./token/tokenController');
+const { getProtectedData, getProtectedHomePage, page404 } = require('./protected/protectedController');
+const { sendLoginPage, handleLogout } = require('./auth/authController');
+const {getUsers}  = require('./user/userController');
 const router = express.Router();
+const {creatHash} = require('./hash/hashController');
 
-router.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'pages', 'login.html'));
-});
+// Routes for serving static files
+router.get('/', sendLoginPage);
+router.get('/login', sendLoginPage);
+router.all('/404', page404);
 
-router.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'pages', 'login.html'));
-});
-
-// Rota para gerar um token
+// Route to generate a token
 router.post('/generate-token', generateTokenHandler);
 
-// Rota protegida que requer um token válido
+// Protected route that requires a valid token
 router.get('/protected', validateToken, getProtectedData);
-  
-// router.get(["/", "/:name"], (req, res) => {
-//     const greeting = "<h1>Hello From Node on Fly test!</h1>";
-//     const name = req.params["name"];
-//     if (name) {
-//       res.send(greeting + "</br>and hello to " + name);
-//     } else {
-//       res.send(greeting);
-//     }
-// });
-  
+router.get('/home', validateToken, getProtectedHomePage);
+
+// Route to handle logout, accepts any HTTP method
+router.all('/logout', handleLogout);
+
+router.get('/test', page404);
+
 module.exports = router;

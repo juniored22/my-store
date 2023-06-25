@@ -2,13 +2,21 @@ const express = require("express");
 const path = require('path');
 const bodyParser = require('body-parser');
 const routes = require('./routes');
+const cookieParser = require('cookie-parser');
+const { connectToMongoDB } = require('./db/mongodb');
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+connectToMongoDB()
+
+app.use(cors());
+app.use(cookieParser('your-secret-key'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(express.json());
+
 // Importar as rotas do arquivo separado
 app.use('/', routes);
 

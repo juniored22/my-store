@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-Br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
 <body>
 
 <div class="container" id="container">
-	<div class="form-container sign-up-container">
+	<div class="form-container sign-up-container inactiveForm">
 		<form action="#">
 			<h1>Create Account</h1>
 			<div class="social-container">
@@ -19,13 +19,14 @@
 				<a href="#" class="social"><i class="fab fa-linkedin-in"></i></a>
 			</div>
 			<span>or use your email for registration</span>
-			<input type="text" placeholder="Name" />
-			<input type="email" placeholder="Email" />
-			<input type="password" placeholder="Password" />
-			<button>Sign Up</button>
+			<input type="text" name="name" placeholder="Name" required/>
+			<input type="email" name="email" placeholder="Email" required/>
+			<input type="password" name="password" placeholder="Password" required/>
+			<button id="signup-btn">Sign Up</button>
+			<a data-sign-up href="" onclick="event.preventDefault()">Sign in</a>
 		</form>
 	</div>
-	<div class="form-container sign-in-container">
+	<div class="form-container sign-in-container activeForm">
 		<form action="#">
 			<h1>Sign in</h1>
 			<div class="social-container">
@@ -34,10 +35,11 @@
 				<a href="#" class="social"><i class="fab fa-linkedin-in"></i></a>
 			</div>
 			<span>or use your account</span>
-			<input type="email" placeholder="Email" />
-			<input type="password" placeholder="Password" />
+			<input type="text" name="username" placeholder="Email" required/>
+			<input type="password" name="password" placeholder="Password" required />
 			<a href="#">Forgot your password?</a>
-			<button>Sign In</button>
+			<button id="signin-btn">Sign In</button>
+			<a data-sign-in href="" onclick="event.preventDefault()">Sign up</a>
 		</form>
 	</div>
 	<div class="overlay-container">
@@ -62,6 +64,6 @@
 	</p>
 </footer>
     
-<script src="js/login.js"></script>
+<script type="module" src="js/login.js"></script>
 </body>
 </html>
