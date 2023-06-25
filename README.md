@@ -40,7 +40,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkb
 - /routes
   - index.js
 - app.js
+[
 
 
-
-![Texto alternativo](public/img/token-jwt.png" alt="token-jwt.png)
+![[Texto alternativo]([public/img/token-jwt.png" alt="token-jwt.png](https://github.com/juniored22/my-store/blob/master/public/img/token-in-httpOnly.png)
