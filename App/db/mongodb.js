@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
+
+console.log(process.env);
 const uri = process.env.DATABASE_URL;
 const options = {
   useNewUrlParser: true,
