@@ -1,6 +1,6 @@
 const userModel = require('./userModel');
 
-async function getAllUsers() {
+exports.getAllUsers = async()=>{
   try {
     const users = await userModel.getUsers();
     return users;
@@ -10,7 +10,7 @@ async function getAllUsers() {
   }
 }
 
-async function getUserByEmail(email) {
+exports.getUserByEmail = async(email) => {
     try {
       const user = await userModel.getUsersByKey({key:'email',value:email});
       return user;
@@ -20,7 +20,4 @@ async function getUserByEmail(email) {
     }
 }
 
-module.exports = {
-    getAllUsers,
-    getUserByEmail
-};
+

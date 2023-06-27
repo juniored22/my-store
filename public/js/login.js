@@ -16,12 +16,15 @@ Main.init((config)=>{
 			headers: {'Content-Type': 'application/json'},
 			body: body
 		  };
-
+		
 		  fetch(`${server}/generate-token`, options)
-		  .then(response => response.json())
+		  .then(response =>  {
+			if(response.status === 401)showCustomAlert("Error","Usuário ou senha incorreta!", "error");
+			return response.json()
+		  })
 		  .then(response => response.token && (window.location.href = `${server}/home`) )
 		  .then( () => typeof callback === 'function' && callback())
-		  .catch(err => console.error(err));
+		  .catch(err => console.warn(err));
 	}
 
 	const toggleZIndex = (activeForm, inactiveForm) => {
@@ -45,7 +48,7 @@ Main.init((config)=>{
 	
 	signInForm.addEventListener('submit', function(event) {
 
-		const button = document.getElementById("signin-btn");
+		let button = document.getElementById("signin-btn");
 		button.innerHTML = 'Sign In <div class="spinner"></div>';
 		button.classList.add("loading");
 
@@ -62,6 +65,27 @@ Main.init((config)=>{
 
 	signUpBtn.addEventListener('click', () => toggleZIndex(signUpForm, signInForm));
 	signInBtn.addEventListener('click', () => toggleZIndex(signInForm, signUpForm));
+
+
+
+	function showCustomAlert(title,message,classAlert) {
+		document.querySelector('.alert_').innerHTML = `
+			<div id="alert" class="alert-content">
+				<div class="alert-card alert-${classAlert}">
+					<i class="alert-icon-info fa fa-info"></i>
+					<div class="alert-div-text">
+						<span>${title}</span>
+						<p>
+						${message}
+						</p>
+					</div>
+				</div>
+			</div>`;
+		document.getElementById('alert').style.display = 'block';
+		setTimeout(()=>{
+			document.getElementById('alert').style.display='none'
+		},50000000)
+	}
 	
 });
 
