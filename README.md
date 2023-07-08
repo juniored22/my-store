@@ -40,7 +40,26 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkb
 - /routes
   - index.js
 - app.js
-[
+
+
+
+### structure 
+
+meu-projeto/
+│
+├── src/
+│   ├── components/
+│   │   ├── HeaderLeft/
+│   │   │   └── index.js
+│   │   ├── HeaderRight/
+│   │   │   └── index.js
+│   │   └── MessagesButton/
+│   │       └── index.js
+│   └── index.js
+│
+├── index.html
+└── ...
+
 
 ### Token httpOnly 
 

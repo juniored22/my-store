@@ -12,6 +12,7 @@
   --link-color-hover: #c3cff4;
   --link-color-active: #fff;
   --link-color-active-bg: #1f1c2e;
+  --link-color-active-gradient-bg:linear-gradient(145deg, #cacaca, #0c584b);
   --projects-section: #fff;
   --message-box-hover: #fafcff;
   --message-box-border: #e9ebf0;
@@ -247,12 +248,24 @@ button, a {
   align-items: center;
 }
 .app-sidebar-link:hover {
-  background-color: var(--link-color-hover);
-  color: var(--link-color-active);
+  /* background-color: var(--link-color-hover); */
+  /* color: var(--link-color-active); */
+}
+
+.app-sidebar-link:hover svg{
+  /* background-color: var(--link-color-hover); 
+  color: var(--link-color-active); */
+  box-shadow: 0 0 0 0 #66666657;
 }
 .app-sidebar-link.active {
   background-color: var(--link-color-active-bg);
   color: var(--link-color-active);
+}
+
+.app-sidebar-link.active svg {
+  background: var(--link-color-active-gradient-bg);
+  color: var(--link-color-active);
+  box-shadow: 0 0 0 0px #443c3c57;
 }
 
 .projects-section {
@@ -859,4 +872,59 @@ button, a {
     right: 2px;
     top: 10px;
   }
+}
+
+.active path.cls-1 {
+  fill: #fff;
+}
+
+.dark path.cls-1 {
+  fill: #fff;
+}
+
+a.app-sidebar-link:after {
+  content: "";
+  position: absolute;
+  background: #dae0ed21;
+  width: 44px;
+  height: 45px;
+  filter: blur(3px);
+  border-radius: 50%;
+  z-index: 1;
+  /* border: solid 1px #666; */
+}
+
+.link-icon-css{
+  z-index: 2;
+  border: solid 1px #ccc;
+  border-radius: 50%;
+  box-shadow: -1px 7px 5px 0px #443c3c57;
+  padding: 10px;
+  transition: .2s;
+}
+
+
+.dark a.app-sidebar-link:after {
+  content: "";
+  position: absolute;
+  background: #18243e;
+  width: 44px;
+  height: 45px;
+  filter: blur(0);
+  border-radius: 50%;
+  z-index: 1;
+  /* border: solid 1px #000; */
+}
+
+.dark .link-icon-css {
+  z-index: 2;
+  border: solid 0 #000;
+  border-radius: 50%;
+  box-shadow: -1px 7px 5px 0px #00000057;
+  padding: 10px;
+  transition: .2s;
+}
+
+.dark .logout-btn{
+  background: red;
 }

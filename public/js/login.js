@@ -84,7 +84,7 @@ Main.init((config)=>{
 		document.getElementById('alert').style.display = 'block';
 		setTimeout(()=>{
 			document.getElementById('alert').style.display='none'
-		},50000000)
+		},5000)
 	}
 	
 });
