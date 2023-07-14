@@ -97,7 +97,7 @@ mongodb
 
 ### Observer 
 
-![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/observer.png)
+![Texto alternativo](https://github.com/juniored22/my-store/blob/develop/public/img/observer.png)
 
 
 
