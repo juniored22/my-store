@@ -1,11 +1,14 @@
-const express = require("express");
-const validateToken = require('./middlewares/validateToken');
-const { generateTokenHandler } = require('./token/tokenController');
-const { getProtectedData, getProtectedHomePage, page404 } = require('./protected/protectedController');
-const { sendLoginPage, handleLogout } = require('./auth/authController');
-const {getUsers}  = require('./user/userController');
-const router = express.Router();
-const {creatHash} = require('./hash/hashController');
+const express                   = require("express");
+const validateToken             = require('./middlewares/validateToken');
+const router                    = express.Router();
+const { generateTokenHandler }  = require('./token/tokenController');
+const { getProtectedData }      = require('./protected/protectedController');
+const { getProtectedHomePage }  = require('./protected/protectedController');
+const { page404 }               = require('./protected/protectedController');
+const { sendLoginPage }         = require('./auth/authController');
+const { handleLogout }          = require('./auth/authController');
+const { getUsers }              = require('./user/userController');
+const { creatHash }             = require('./hash/hashController');
 
 // Routes for serving static files
 router.get('/', sendLoginPage);

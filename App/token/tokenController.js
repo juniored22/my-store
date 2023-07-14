@@ -1,5 +1,5 @@
 const { generateToken } = require('./tokenService');
-const { authenticate } = require('../auth/authService');
+const { authenticate }  = require('../auth/authService');
 
 // Função para gerar e retornar um token JWT como um cookie HttpOnly
 const generateTokenHandler = async (req, res) => {

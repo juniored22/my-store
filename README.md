@@ -95,9 +95,9 @@ mongodb
 
 ![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/varial-ambiente.png)
 
-### Obsever 
+### Observer 
 
-![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/obsever.png)
+![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/observer.png)
 
 
 
