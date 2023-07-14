@@ -53,6 +53,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkb
 
 ### structure 
 
+```
 meu-projeto/
 │
 ├── src/
@@ -67,7 +68,7 @@ meu-projeto/
 │
 ├── index.html
 └── ...
-
+```
 
 ### Tools
 nodemon
