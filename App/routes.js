@@ -17,11 +17,13 @@ router.post('/generate-token', generateTokenHandler);
 
 // Protected route that requires a valid token
 router.get('/protected', validateToken, getProtectedData);
-router.get('/home', validateToken, getProtectedHomePage);
+router.get('/aplication', validateToken, getProtectedHomePage);
 
 // Route to handle logout, accepts any HTTP method
 router.all('/logout', handleLogout);
 
-router.get('/test', page404);
+router.get('/test', (req, res)=>{
+    res.json({ success:true, error:false, message: 'This is a protected route' });
+});
 
 module.exports = router;

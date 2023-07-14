@@ -1,30 +1,30 @@
 import { Main } from './main.js'
 
 Main.init((config)=>{
+	const signUpButton 	= document.getElementById('signUp');
+	const signInButton 	= document.getElementById('signIn');
+	const container 	= document.getElementById('container');
+	const signInForm 	= document.querySelector('.sign-in-container');
+	const signUpForm 	= document.querySelector('.sign-up-container');
+	const signUpBtn 	= document.querySelector('[data-sign-up]');
+	const signInBtn 	= document.querySelector('[data-sign-in]')
+	const server 		= config[config.build.environment].host;
 
-	const signUpButton = document.getElementById('signUp');
-	const signInButton = document.getElementById('signIn');
-	const container = document.getElementById('container');
-	const signInForm = document.querySelector('.sign-in-container');
-	const signUpForm = document.querySelector('.sign-up-container');
-	const signUpBtn = document.querySelector('[data-sign-up]');
-	const signInBtn = document.querySelector('[data-sign-in]')
-	const server = config[config.build.environment].host;
 	const requestLogin = (body, callback)=>{
 		const options = {
 			method: 'POST',
 			headers: {'Content-Type': 'application/json'},
 			body: body
-		  };
+		};
 		
-		  fetch(`${server}/generate-token`, options)
-		  .then(response =>  {
-			if(response.status === 401)showCustomAlert("Error","Usuário ou senha incorreta!", "error");
-			return response.json()
-		  })
-		  .then(response => response.token && (window.location.href = `${server}/home`) )
-		  .then( () => typeof callback === 'function' && callback())
-		  .catch(err => console.warn(err));
+		fetch(`${server}/generate-token`, options)
+		.then(response =>  {
+		if(response.status === 401)showCustomAlert("Error","Usuário ou senha incorreta!", "error");
+		return response.json()
+		})
+		.then(response => response.token && (window.location.href = `${server}/aplication`) )
+		.then( () => typeof callback === 'function' && callback())
+		.catch(err => console.warn(err));
 	}
 
 	const toggleZIndex = (activeForm, inactiveForm) => {
@@ -36,7 +36,6 @@ Main.init((config)=>{
 			inactiveForm.classList.replace('activeForm', 'inactiveForm');
 		}
 	};
-	
 	
 	signUpButton.addEventListener('click', () => {
 		container.classList.add("right-panel-active");
@@ -65,8 +64,6 @@ Main.init((config)=>{
 
 	signUpBtn.addEventListener('click', () => toggleZIndex(signUpForm, signInForm));
 	signInBtn.addEventListener('click', () => toggleZIndex(signInForm, signUpForm));
-
-
 
 	function showCustomAlert(title,message,classAlert) {
 		document.querySelector('.alert_').innerHTML = `

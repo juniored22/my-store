@@ -10,7 +10,7 @@ const getProtectedData = (req, res) => {
 };
 
 const getProtectedHomePage = (req, res) =>{
-    res.sendFile(path.join(staticFilesDirectory, 'home.html'));
+    res.sendFile(path.join(staticFilesDirectory, 'index.html'));
 }
 
 const page404 = (req, res) =>{

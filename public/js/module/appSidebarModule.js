@@ -1,16 +1,14 @@
-// appSidebarModule.js
-import { appSidebarLinkComponent } from '../components/Menu/index.js';
-import { pieChartLinkComponent } from '../components/Menu/index.js';
-import { calendarLinkComponent } from '../components/Menu/index.js';
-import { settingsLinkComponent } from '../components/Menu/index.js';
-import { logoutComponent, userLinkComponent } from '../components/Menu/index.js';
+import { appSidebarLinkComponent, pieChartLinkComponent, calendarLinkComponent, settingsLinkComponent, logoutComponent, userLinkComponent } from '../components/Menu/index.js';
 
+export class AppSidebarModule {
+  constructor(myObserver) {
+    this.myObserver = myObserver;
+    this.appSidebar = document.querySelector('.app-sidebar');
+  }
 
-export function renderSidebar() {
-    const appSidebar = document.querySelector('.app-sidebar');
-  
-    if (appSidebar) {
-      appSidebar.innerHTML = `
+  renderSidebar() {
+    if (this.appSidebar) {
+      this.appSidebar.innerHTML = `
         ${appSidebarLinkComponent}
         ${pieChartLinkComponent}
         ${calendarLinkComponent}
@@ -20,21 +18,43 @@ export function renderSidebar() {
       `;
     }
   }
-  
-  export function handleSidebarClick() {
-    const appSidebar = document.querySelector('.app-sidebar');
-    const appSidebarTagClick = document.querySelectorAll('.app-sidebar a');
 
+  addFunctionObserver(){
+    this.myObserver.subscribe(this.logData1);
+    this.myObserver.subscribe(this.logData2);
+  }
+
+  logData1 = data => console.log(`Observer 1: ${data}`);
+  logData2 = data => console.log(`Observer 2: ${data}`);
+  
+  handleSidebarClick() {
+    const appSidebarTagClick = document.querySelectorAll('.app-sidebar a');
 
     Array.from(appSidebarTagClick).forEach(a => {
       a.addEventListener('click', (event) => {
-
-        appSidebar.querySelectorAll('a').forEach(function(elemento) {
-          elemento.classList.remove('active'); // Substitua 'suaClasse' pelo nome da classe que deseja remover
+        this.appSidebar.querySelectorAll('a').forEach(function(elemento) {
+          elemento.classList.remove('active');
         });
-   
-        a.classList.add('active')
-      });
+        
+        a.classList.add('active');
 
+        this.myObserver.notify('Hello!');
+        this.myObserver.unsubscribe(this.logData2);
+        this.myObserver.notify('Goodbye!');
+      });
     });
   }
+
+  reloadSidebar() {
+    const url = window.location.hash;
+    const links = document.querySelectorAll('.app-sidebar a');
+
+    links.forEach(link => {
+      if (link.getAttribute('href') === url) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+  }
+}

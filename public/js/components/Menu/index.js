@@ -1,5 +1,5 @@
 export const appSidebarLinkComponent = `
-    <a href="#" class="app-sidebar-link active">
+    <a href="#home" class="app-sidebar-link active">
         <svg class="feather feather-home link-icon-css" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" >
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
@@ -8,7 +8,7 @@ export const appSidebarLinkComponent = `
 `;
 
 export const pieChartLinkComponent = `
-    <a href="#" class="app-sidebar-link">
+    <a href="#chart" class="app-sidebar-link">
         <svg class="link-icon link-icon-css feather feather-pie-chart" xmlns="http://www.w3.org/2000/svg"  fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"  viewBox="0 0 24 24">
             <defs />
             <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z" />
@@ -17,7 +17,7 @@ export const pieChartLinkComponent = `
 `;
 
 export const calendarLinkComponent = `
-    <a href="#" class="app-sidebar-link">
+    <a href="#calendar" class="app-sidebar-link">
         <svg class="feather feather-calendar link-icon-css" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" >
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
@@ -28,7 +28,7 @@ export const calendarLinkComponent = `
 `;
 
 export const settingsLinkComponent = `
-    <a href="#" class="app-sidebar-link">
+    <a href="#setting" class="app-sidebar-link">
         <svg class="link-icon link-icon-css" xmlns="http://www.w3.org/2000/svg"  fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="feather feather-settings" viewBox="0 0 24 24">
             <defs />
             <circle cx="12" cy="12" r="3" />
@@ -39,7 +39,7 @@ export const settingsLinkComponent = `
 
 
 export const userLinkComponent = `  
-    <a href="#" class="app-sidebar-link ">
+    <a href="#users" class="app-sidebar-link ">
         <svg class="link-icon link-icon-css" style="padding: 7px;    "  viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:#555;}</style></defs><title/><g data-name="Layer 7" id="Layer_7"><path class="cls-1" d="M19.75,15.67a6,6,0,1,0-7.51,0A11,11,0,0,0,5,26v1H27V26A11,11,0,0,0,19.75,15.67ZM12,11a4,4,0,1,1,4,4A4,4,0,0,1,12,11ZM7.06,25a9,9,0,0,1,17.89,0Z"/></g></svg>
     </a>
 `;

@@ -17,7 +17,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(express.json());
 
+
 // Importar as rotas do arquivo separado
 app.use('/', routes);
 
-app.listen(port, () => console.log(`HelloNode app listening on port ${port}!`));
+// Rota padrão para lidar com todas as outras rotas
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, '..', 'public','pages', '404.html'));
+});
+
+app.listen(port, () => console.log(`App listening on port ${port}!`));

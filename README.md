@@ -8,6 +8,14 @@ This is a simple application used in the [fly.io Getting Started](https://fly.io
 * When prompted for a builder, select builtin Nodejs.
 * Run flyctl deploy
 
+
+## Start 
+
+Teste nodemon
+```sh 
+npm  run start:dev 
+```
+
 ### Generate-token
 ```http
 
@@ -61,6 +69,13 @@ meu-projeto/
 └── ...
 
 
+### Tools
+nodemon
+node js
+npm
+vscode
+mongodb
+
 ### Token httpOnly 
 
 ![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/token-in-httpOnly.png)
@@ -79,4 +94,10 @@ meu-projeto/
 ### Token JWT 
 
 ![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/varial-ambiente.png)
+
+### Obsever 
+
+![Texto alternativo](https://github.com/juniored22/my-store/blob/master/public/img/obsever.png)
+
+
 
