@@ -1,5 +1,4 @@
 /.git
 /node_modules
 .env
-.rascunhos.txt
-config.ini
+public/config.ini
