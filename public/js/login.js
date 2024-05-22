@@ -1,6 +1,9 @@
 import { Main } from './main.js'
+import FacebookAuth from './providers/FaceBook/FacebookAuth.js';
+
 
 Main.init((config)=>{
+
 	const signUpButton 	= document.getElementById('signUp');
 	const signInButton 	= document.getElementById('signIn');
 	const container 	= document.getElementById('container');
@@ -82,6 +85,35 @@ Main.init((config)=>{
 		setTimeout(()=>{
 			document.getElementById('alert').style.display='none'
 		},5000)
+	}
+
+	// if(FacebookAuth.isAvailable()){
+	if(true){
+		const appId = '301879677451407'; // Substitua pelo seu App ID
+		const fbAuth = new FacebookAuth(appId);
+		// Inicializar o SDK do Facebook
+		fbAuth.init().then(() => {
+			console.log('Facebook SDK Initialized');
+		});
+	
+		fbAuth.checkLoginState().then(response => {
+			fbAuth.getUserInfo().then(userInfo => {
+				console.log('User Info:', userInfo);
+				document.getElementById('userInfo').innerText = `Welcome, ${userInfo.name}`;
+			});
+		}).catch(() => {
+			console.log('User not logged in');
+		});
+	
+		const loginButton = document.getElementById('facebookAuth-btn');
+		loginButton.addEventListener('click', () => {
+		  fbAuth.login().then(userInfo => {
+			console.log('User Info:', userInfo);
+			document.getElementById('userInfo').innerText = `Welcome, ${userInfo.name}`;
+		  }).catch(error => {
+			console.error('Login failed:', error);
+		  });
+		});
 	}
 	
 });
