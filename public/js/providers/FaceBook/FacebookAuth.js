@@ -76,7 +76,7 @@ class FacebookAuth {
     // Método para obter as informações do usuário
     getUserInfo() {
       return new Promise((resolve, reject) => {
-        FB.api('/me?fields=name,email', (response) => {
+        FB.api('/me?fields=name,email,picture', (response) => {
           if (response && !response.error) {
             resolve(response);
           } else {
@@ -91,8 +91,10 @@ class FacebookAuth {
       return new Promise((resolve, reject) => {
         FB.login((response) => {
           if (response.authResponse) {
+
+            const { accessToken } = response.authResponse;
             this.getUserInfo().then(userInfo => {
-              resolve(userInfo);
+              resolve({ accessToken, userInfo});
             }).catch(error => {
               reject(error);
             });
@@ -101,10 +103,6 @@ class FacebookAuth {
           }
         }, { scope: 'public_profile,email' });
       });
-    }
-
-    enable() {
-        
     }
   }
   

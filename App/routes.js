@@ -21,6 +21,7 @@ router.post('/generate-token', generateTokenHandler);
 // Protected route that requires a valid token
 router.get('/protected', validateToken, getProtectedData);
 router.get('/aplication', validateToken, getProtectedHomePage);
+router.get('/middlepage', getProtectedHomePage);
 
 // Route to handle logout, accepts any HTTP method
 router.all('/logout', handleLogout);

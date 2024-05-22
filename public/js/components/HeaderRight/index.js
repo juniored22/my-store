@@ -1,3 +1,9 @@
+import { StorageProvider } from '../../providers/Storage/storageProvider.js';
+
+let fbAuth = new StorageProvider('fbAuth').load();
+
+console.log('✔[1/3] fbAuth loaded', fbAuth);
+
 export const headerRightComponent = `
     <div class="app-header-right">
         <button class="mode-switch" title="Switch Theme">
@@ -18,8 +24,8 @@ export const headerRightComponent = `
             </svg>
         </button>
         <button class="profile-btn">
-            <img src="https://assets.codepen.io/3306515/IMG_2025.jpg" />
-            <span>Aybüke C.</span>
+            <img src="${fbAuth ? fbAuth.userInfo.picture.data.url : 'https://assets.codepen.io/3306515/IMG_2025.jpg'}" />
+            <span>${fbAuth ? fbAuth.userInfo.name : 'Profile'}</span>
         </button>
     </div>
 `;

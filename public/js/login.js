@@ -1,16 +1,17 @@
 import { Main } from './main.js'
 import FacebookAuth from './providers/FaceBook/FacebookAuth.js';
+import { StorageProvider } from './providers/Storage/storageProvider.js';
 
 
 Main.init((config)=>{
-
 	const signUpButton 	= document.getElementById('signUp');
 	const signInButton 	= document.getElementById('signIn');
 	const container 	= document.getElementById('container');
 	const signInForm 	= document.querySelector('.sign-in-container');
 	const signUpForm 	= document.querySelector('.sign-up-container');
 	const signUpBtn 	= document.querySelector('[data-sign-up]');
-	const signInBtn 	= document.querySelector('[data-sign-in]')
+	const signInBtn 	= document.querySelector('[data-sign-in]');
+	const loginButton 	= document.getElementById('facebookAuth-btn');
 	const server 		= config[config.build.environment].host;
 
 	const requestLogin = (body, callback)=>{
@@ -87,29 +88,30 @@ Main.init((config)=>{
 		},5000)
 	}
 
-	// if(FacebookAuth.isAvailable()){
-	if(true){
-		const appId = '301879677451407'; // Substitua pelo seu App ID
-		const fbAuth = new FacebookAuth(appId);
+	if(config.build.facebookAuth === 'true'){
+		const fbAuth = new FacebookAuth(config.build.facebookAppId);
+		
 		// Inicializar o SDK do Facebook
 		fbAuth.init().then(() => {
-			console.log('Facebook SDK Initialized');
+			console.log('Facebook SDK Initialized',config);
 		});
 	
 		fbAuth.checkLoginState().then(response => {
 			fbAuth.getUserInfo().then(userInfo => {
 				console.log('User Info:', userInfo);
-				document.getElementById('userInfo').innerText = `Welcome, ${userInfo.name}`;
 			});
 		}).catch(() => {
 			console.log('User not logged in');
 		});
 	
-		const loginButton = document.getElementById('facebookAuth-btn');
 		loginButton.addEventListener('click', () => {
-		  fbAuth.login().then(userInfo => {
-			console.log('User Info:', userInfo);
-			document.getElementById('userInfo').innerText = `Welcome, ${userInfo.name}`;
+		  fbAuth.login().then(({userInfo, accessToken}) => {
+			console.log('User Info:', userInfo, accessToken);
+			new StorageProvider('fbAuth')
+			.save({userInfo, accessToken});
+			new StorageProvider('fbToken')
+			.save(accessToken);
+			window.location.href = `${server}/middlepage`;
 		  }).catch(error => {
 			console.error('Login failed:', error);
 		  });
