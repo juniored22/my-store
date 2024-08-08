@@ -1,3 +1,5 @@
+import CameraProvider  from './providers/Camera/CameraProvider.js';
+
 export class RenderComponents {
     constructor({router, observerInstance, renderHeader, renderSidebar, handleHeaderClick, handleSidebarClick, reloadSidebar}) {
       this.router               = router;
@@ -10,6 +12,13 @@ export class RenderComponents {
     }
 
     initialize() {
+
+      // const videoElement = document.getElementById('video-security-div');
+      // const errorMessageElement = document.getElementById('error-message');
+
+      // const cameraProvider = new CameraProvider(videoElement, errorMessageElement);
+      // cameraProvider.init();
+
       this.renderHeader();
       this.renderSidebar();
       this.handleHeaderClick();
@@ -18,5 +27,6 @@ export class RenderComponents {
       this.router.addRoute("/home", "test");
       this.router.updateContent();
     }
+    
 }
   

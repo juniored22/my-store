@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extract Audio from Video</title>
+</head>
+<body>
+  <input type="file" id="videoFile" accept="video/*">
+  <button id="extractAudio">Extract Audio</button>
+  <a id="downloadLink" style="display:none">Download Audio</a>
+
+  <!-- Import ffmpeg.wasm from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg.min.js"></script>
+
+  <script>
+    const { createFFmpeg, fetchFile } = FFmpeg;
+
+    const ffmpeg = createFFmpeg({ log: true });
+
+    document.getElementById('extractAudio').addEventListener('click', async () => {
+      const videoFile = document.getElementById('videoFile').files[0];
+      if (!videoFile) {
+        alert('Please select a video file first!');
+        return;
+      }
+
+      await ffmpeg.load();
+      ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
+
+      await ffmpeg.run('-i', 'input.mp4', '-q:a', '0', '-map', 'a', 'output.mp3');
+
+      const data = ffmpeg.FS('readFile', 'output.mp3');
+      const audioBlob = new Blob([data.buffer], { type: 'audio/mp3' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      const downloadLink = document.getElementById('downloadLink');
+      downloadLink.href = audioUrl;
+      downloadLink.download = 'output.mp3';
+      downloadLink.style.display = 'block';
+      downloadLink.textContent = 'Download Audio';
+    });
+  </script>
+</body>
+</html>

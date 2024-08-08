@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Treinamento de Palavras</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/meyda/dist/web/meyda.min.js"></script>
+    <style>
+        #classification-list {
+            list-style-type: none;
+        }
+        #classification-list li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <button id="iniciar-button">Iniciar Treinamento</button>
+    <div id="contador"></div>
+    <div id="palavra-atual"></div>
+    <ul id="classification-list"></ul>
+    <div id="resultados"></div>
+
+    <script>
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        const comandos = ['comando teste', 'testando agora'];
+        let comandoAtualIndex = 0;
+        const resultadosSalvos = [];
+        let mediaRecorder;
+        let audioChunks = [];
+
+        async function iniciarTreinamento() {
+            if (comandoAtualIndex < comandos.length) {
+                document.getElementById('palavra-atual').textContent = `Fale a palavra: ${comandos[comandoAtualIndex]}`;
+                await iniciarContagem();
+            } else {
+                document.getElementById('palavra-atual').textContent = 'Treinamento concluído!';
+            }
+        }
+
+        async function iniciarContagem() {
+            let contador = 3;
+            const contadorDiv = document.getElementById('contador');
+            contadorDiv.textContent = `Gravando ruído de fundo em: ${contador}`;
+            const intervalId = setInterval(() => {
+                contador--;
+                if (contador > 0) {
+                    contadorDiv.textContent = `Gravando ruído de fundo em: ${contador}`;
+                } else {
+                    clearInterval(intervalId);
+                    contadorDiv.textContent = 'Gravando ruído de fundo...';
+                    setTimeout(() => {
+                        contadorDiv.textContent = '';
+                        iniciarCaptura();
+                    }, 1000); // 1 segundo para gravar ruído de fundo
+                }
+            }, 1000);
+        }
+
+        async function iniciarCaptura() {
+            await startRecording();
+            recognition.start();
+            console.log('Iniciando captura de fala. Fale agora...');
+        }
+
+        recognition.onstart = () => {
+            console.log('Reconhecimento de fala iniciado...');
+        };
+
+        recognition.onresult = (event) => {
+            const resultado = event.results[0][0].transcript.toLowerCase();
+            console.log(`Você disse: ${resultado}`);
+            const divResultados = document.getElementById('resultados');
+            if (comandos.includes(resultado)) {
+                divResultados.textContent = `Comando reconhecido: ${resultado}`;
+                salvarResultado(resultado);
+                comandoAtualIndex++;
+                stopRecording();
+                iniciarTreinamento();
+            } else {
+                divResultados.textContent = 'Comando não reconhecido. Tente novamente.';
+                stopRecording();
+            }
+        };
+
+        recognition.onspeechend = () => {
+            recognition.stop();
+            console.log('Reconhecimento de fala finalizado.');
+        };
+
+        recognition.onerror = (event) => {
+            console.log(`Erro no reconhecimento de fala: ${event.error}`);
+        };
+
+        function salvarResultado(resultado) {
+            resultadosSalvos.push(resultado);
+            atualizarListaDeResultados();
+        }
+
+        function atualizarListaDeResultados() {
+            const lista = document.getElementById('classification-list');
+            lista.innerHTML = '';
+            resultadosSalvos.forEach((resultado, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `Palavra ${index + 1}: ${resultado}`;
+                lista.appendChild(listItem);
+            });
+        }
+
+        async function startRecording() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+            audioChunks = [];
+
+            mediaRecorder.addEventListener('dataavailable', event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener('stop', () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = audioUrl;
+                a.download = `${comandos[comandoAtualIndex]}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(audioUrl);
+                stopRecording();
+            });
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+        }
+
+        document.getElementById('iniciar-button').onclick = iniciarTreinamento;
+    </script>
+</body>
+</html>

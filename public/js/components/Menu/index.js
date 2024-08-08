@@ -27,6 +27,17 @@ export const calendarLinkComponent = `
     </a>
 `;
 
+export const faceRecognitionLinkComponent = `
+    <a href="/face-recognition" class="app-sidebar-link">
+        <svg class="link-icon link-icon-css" style="padding: 7px;box-sizing: content-box;    "   xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-camera">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+            </path>
+            <circle cx="12" cy="13" r="4">
+            </circle>
+        </svg>
+    </a>
+`;
+
 export const settingsLinkComponent = `
     <a href="#setting" class="app-sidebar-link">
         <svg class="link-icon link-icon-css" xmlns="http://www.w3.org/2000/svg"  fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="feather feather-settings" viewBox="0 0 24 24">

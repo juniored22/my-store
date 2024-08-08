@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Third Person Camera with Physics</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        #menu, #pauseMenu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.8); color: white; z-index: 1; }
+        #characterSelection { display: flex; justify-content: center; gap: 20px; }
+        .characterCard { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .characterCard canvas { margin-bottom: 10px; }
+        #startButton, .pauseButton { padding: 20px 40px; margin: 10px; font-size: 24px; cursor: pointer; background-color: #0077ff; border: none; border-radius: 10px; }
+        #startButton { display: none; }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <div id="characterSelection"></div>
+        <button id="startButton">Start</button>
+    </div>
+    <div id="pauseMenu" style="display: none;">
+        <button class="pauseButton" id="continueButton">Continue</button>
+        <button class="pauseButton" id="restartButton">Restart</button>
+        <button class="pauseButton" id="exitButton">Exit</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/stats-js@1.0.1/build/stats.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

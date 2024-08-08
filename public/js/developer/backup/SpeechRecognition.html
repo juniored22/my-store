@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Treinamento de Palavras</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/meyda/dist/web/meyda.min.js"></script>
+    <style>
+        #classification-list {
+            list-style-type: none;
+        }
+        #classification-list li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+   
+
+    <script>
+        // Criação do reconhecimento de fala
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'pt-BR'; // Definir o idioma para Português do Brasil
+        recognition.interimResults = false; // Não queremos resultados intermediários
+        recognition.maxAlternatives = 1; // Máximo de alternativas por reconhecimento
+
+        console.log({recognition});
+
+        // Lista de comandos que queremos reconhecer
+        const comandos = ['um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez'];
+
+        // Função para iniciar a captura de fala
+        function iniciarCaptura() {
+            recognition.start();
+            console.log('Iniciando captura de fala. Fale agora...');
+        }
+
+        // Evento quando o reconhecimento é iniciado
+        recognition.onstart = () => {
+            console.log('Reconhecimento de fala iniciado...');
+        };
+
+        // Evento quando o reconhecimento de fala resulta em uma correspondência
+        recognition.onresult = (event) => {
+            console.log({event});
+            const resultado = event.results[0][0].transcript.toLowerCase();
+            console.log(`Você disse: ${resultado}`);
+
+            if (comandos.includes(resultado)) {
+                console.log(`Comando reconhecido: ${resultado}`);
+            } else {
+                console.log('Comando não reconhecido.');
+            }
+        };
+
+        // Evento quando o reconhecimento é concluído
+        recognition.onspeechend = () => {
+            recognition.stop();
+            console.log('Reconhecimento de fala finalizado.');
+        };
+
+        // Evento quando ocorre um erro no reconhecimento de fala
+        recognition.onerror = (event) => {
+            console.log(`Erro no reconhecimento de fala: ${event.error}`);
+        };
+
+        // Adicionando um botão para iniciar a captura de fala
+        const botaoCaptura = document.createElement('button');
+        botaoCaptura.textContent = 'Iniciar Captura de Fala';
+        botaoCaptura.onclick = iniciarCaptura;
+        document.body.appendChild(botaoCaptura);
+
+        // Adicionando um div para mostrar os resultados
+        const divResultados = document.createElement('div');
+        divResultados.id = 'resultados';
+        document.body.appendChild(divResultados);
+    </script>
+</body>
+</html>

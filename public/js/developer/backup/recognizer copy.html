@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Custom Speech Commands Model</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+<body>
+    <h1>Custom Speech Commands Model</h1>
+    <button id="record-background">Gravar Ruído de Fundo</button>
+    <button id="start-recording" disabled>Começar a Gravar Palavras</button>
+    <button id="stop-recording" disabled>Parar Gravação</button>
+    <button id="train-model" disabled>Treinar Modelo</button>
+    <button id="predict" disabled>Prever</button>
+    <button id="stop-predict" disabled>Parar Previsão</button>
+    <p id="instruction"></p>
+    <p id="result"></p>
+    <script>
+        const customWords = ['um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'silêncio'];
+        let backgroundNoise = [];
+        let wordSamples = {};
+        let model;
+        let isRecording = false;
+        let isPredicting = false;
+
+        // Initialize word samples
+        customWords.forEach(word => {
+            wordSamples[word] = [];
+        });
+
+        async function startRecording() {
+            if (isRecording) return;
+            isRecording = true;
+            document.getElementById('start-recording').disabled = true;
+            document.getElementById('stop-recording').disabled = false;
+            recordNextWord();
+        }
+
+        async function stopRecording() {
+            isRecording = false;
+            document.getElementById('start-recording').disabled = false;
+            document.getElementById('stop-recording').disabled = true;
+            document.getElementById('train-model').disabled = false;
+            document.getElementById('instruction').innerText = "Gravação parada.";
+        }
+
+        async function recordNextWord() {
+            if (!isRecording) return;
+            for (let i = 0; i < customWords.length - 1; i++) { // Exclude 'silêncio'
+                const word = customWords[i];
+                document.getElementById('instruction').innerText = `Por favor, diga a palavra: "${word}"`;
+                await new Promise(resolve => setTimeout(resolve, 2000));  // Wait for 2 seconds before recording
+                console.log(`Coletando exemplo para: ${word}`);
+                const sample = await recordAudio(1000); // Record for 1 second
+                const normalizedSample = await processAudio(sample);
+                wordSamples[word].push(normalizedSample);
+            }
+            stopRecording();
+        }
+
+        async function recordAudio(duration) {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            let audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.start();
+
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, duration);
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    resolve(audioBlob);
+                };
+            });
+        }
+
+        async function processAudio(audioBlob) {
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            const rawData = audioBuffer.getChannelData(0); // Use the first channel
+            const normalizedData = rawData.map(sample => Math.max(-1, Math.min(1, sample))); // Normalize between -1 and 1
+            return normalizedData;
+        }
+
+        async function trainModel() {
+            document.getElementById('instruction').innerText = "Treinando modelo...";
+            const samples = [];
+            const labels = [];
+
+            // Add word samples to training data
+            customWords.slice(0, -1).forEach((word, index) => { // Exclude 'silêncio'
+                wordSamples[word].forEach(sample => {
+                    samples.push(sample);
+                    labels.push(index);
+                });
+            });
+
+            // Add background noise samples to training data for silence
+            backgroundNoise.forEach(sample => {
+                samples.push(sample);
+                labels.push(customWords.length - 1); // 'silêncio' index
+            });
+
+            const sampleLength = samples[0].length;
+            const xs = tf.tensor(samples, [samples.length, sampleLength]);
+            const ys = tf.oneHot(tf.tensor1d(labels, 'int32'), customWords.length);
+
+            model = tf.sequential();
+            model.add(tf.layers.dense({ units: 128, activation: 'relu', inputShape: [sampleLength] }));
+            model.add(tf.layers.dense({ units: customWords.length, activation: 'softmax' }));
+            model.compile({ optimizer: 'adam', loss: 'categoricalCrossentropy', metrics: ['accuracy'] });
+
+            await model.fit(xs, ys, {
+                epochs: 10,
+                callbacks: {
+                    onEpochEnd: (epoch, logs) => {
+                        console.log(`Época ${epoch + 1}: perda=${logs.loss}, precisão=${logs.acc}`);
+                    },
+                    onTrainEnd: () => {
+                        document.getElementById('instruction').innerText = "Treinamento concluído.";
+                        document.getElementById('predict').disabled = false;
+                    }
+                }
+            });
+        }
+
+        async function startPredict() {
+            isPredicting = true;
+            document.getElementById('stop-predict').disabled = false;
+            document.getElementById('instruction').innerText = "Realizando previsão...";
+            while (isPredicting) {
+                const sample = await recordAudio(1000);
+                const normalizedSample = await processAudio(sample);
+                const inputTensor = tf.tensor([normalizedSample], [1, normalizedSample.length]);
+                const prediction = model.predict(inputTensor);
+                const predictedIndex = prediction.argMax(-1).dataSync()[0];
+                const predictedWord = customWords[predictedIndex];
+                console.log('Predicted word:', predictedWord);
+                document.getElementById('result').innerText = `Previsão: ${predictedWord}`;
+            }
+        }
+
+        async function stopPredict() {
+            isPredicting = false;
+            document.getElementById('instruction').innerText = "Previsão parada.";
+            document.getElementById('stop-predict').disabled = true;
+        }
+
+        document.getElementById('record-background').addEventListener('click', recordBackground);
+        document.getElementById('start-recording').addEventListener('click', startRecording);
+        document.getElementById('stop-recording').addEventListener('click', stopRecording);
+        document.getElementById('train-model').addEventListener('click', trainModel);
+        document.getElementById('predict').addEventListener('click', startPredict);
+        document.getElementById('stop-predict').addEventListener('click', stopPredict);
+
+        async function recordBackground() {
+            document.getElementById('instruction').innerText = "Gravando ruído de fundo por 3 segundos...";
+            const background = await recordAudio(3000);
+            const normalizedBackground = await processAudio(background);
+            backgroundNoise.push(normalizedBackground);
+            document.getElementById('instruction').innerText = "Ruído de fundo gravado.";
+            document.getElementById('start-recording').disabled = false;
+        }
+    </script>
+</body>
+</html>

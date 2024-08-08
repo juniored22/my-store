@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Segmentation with TensorFlow.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+<body>
+    <input type="file" id="imageInput" accept="image/*">
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        imageInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            const imageUrl = URL.createObjectURL(file);
+            const img = new Image();
+            img.src = imageUrl;
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+                segmentImage(img);
+            };
+        });
+
+        function createKernel(type) {
+            switch (type) {
+                case 'sobelX':
+                    return tf.tensor4d([
+                        [[[-1]], [[ 0]], [[ 1]]],
+                        [[[-2]], [[ 0]], [[ 2]]],
+                        [[[-1]], [[ 0]], [[ 1]]]
+                    ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+                case 'sobelY':
+                    return tf.tensor4d([
+                        [[[-1]], [[-2]], [[-1]]],
+                        [[[ 0]], [[ 0]], [[ 0]]],
+                        [[[ 1]], [[ 2]], [[ 1]]]
+                    ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+                case 'laplacian':
+                    return tf.tensor4d([
+                        [[[ 0]], [[-1]], [[ 0]]],
+                        [[[-1]], [[ 4]], [[-1]]],
+                        [[[ 0]], [[-1]], [[ 0]]]
+                    ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+                case 'blur':
+                    return tf.tensor4d([
+                        [[[1/9]], [[1/9]], [[1/9]]],
+                        [[[1/9]], [[1/9]], [[1/9]]],
+                        [[[1/9]], [[1/9]], [[1/9]]]
+                    ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+                case 'sharpen':
+                    return tf.tensor4d([
+                        [[[ 0]], [[-1]], [[ 0]]],
+                        [[[-1]], [[ 5]], [[-1]]],
+                        [[[ 0]], [[-1]], [[ 0]]]
+                    ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+                case 'dilation':
+                    return tf.tensor4d([
+                        [[[1]], [[1]], [[1]]],
+                        [[[1]], [[1]], [[1]]],
+                        [[[1]], [[1]], [[1]]]
+                    ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+                case 'erosion':
+                    return tf.tensor4d([
+                        [[[1]], [[1]], [[1]]],
+                        [[[1]], [[1]], [[1]]],
+                        [[[1]], [[1]], [[1]]]
+                    ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+                default:
+                    throw new Error('Unknown kernel type');
+            }
+        }
+
+        async function segmentImage(image) {
+            const imageTensor = tf.browser.fromPixels(image);
+
+            // Adicionar dimensão extra para o batch e converter para float32
+            const imageTensorExpanded = imageTensor.expandDims(0).toFloat();
+
+            const kernelType = 'erosion'; // Substitua pelo tipo de kernel desejado
+            const kernel = createKernel(kernelType);
+
+            const conv2d = tf.conv2d(imageTensorExpanded, kernel, 1, 'same');
+
+            // Remover dimensão extra
+            const conv2dSqueezed = conv2d.squeeze();
+
+            // Normalizar para valores de 0 a 255
+            const conv2dNormalized = conv2dSqueezed.sub(conv2dSqueezed.min())
+                                                   .div(conv2dSqueezed.max().sub(conv2dSqueezed.min()))
+                                                   .mul(255)
+                                                   .toInt();
+
+            // Converter para imagem e desenhar no canvas
+            tf.browser.toPixels(conv2dNormalized, canvas);
+        }
+    </script>
+</body>
+</html>

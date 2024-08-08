@@ -1,6 +1,9 @@
 const express               = require("express");
 const path                  = require('path');
 const bodyParser            = require('body-parser');
+
+const fs                    = require('fs');
+const { exit }              = require('process');
 const routes                = require('./routes');
 const cookieParser          = require('cookie-parser');
 const { connectToMongoDB }  = require('./db/mongodb');
@@ -16,8 +19,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(express.json());
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
+
 // Importar as rotas do arquivo separado
 app.use('/', routes);
+
 
 // Rota padrão para lidar com todas as outras rotas
 app.use((req, res) => {

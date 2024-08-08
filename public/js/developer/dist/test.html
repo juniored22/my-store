@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Segmentation with TensorFlow.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+<body>
+    <input type="file" id="imageInput" accept="image/*">
+    <canvas id="canvas" style="    max-width: 755px;"></canvas>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        imageInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            const imageUrl = URL.createObjectURL(file);
+            const img = new Image();
+            img.src = imageUrl;
+            img.onload = async () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+                await segmentImage(img);
+            };
+        });
+
+        function createEdgeDetectionKernel() {
+            return tf.tensor4d([
+                [[[-100]], [[-100]], [[-100]]],
+                [[[-100]], [[ 800]], [[-100]]],
+                [[[-100]], [[-100]], [[-100]]]
+            ], [3, 3, 1, 1]).tile([1, 1, 3, 1]);
+        }
+
+        async function segmentImage(image) {
+            const imageTensor = tf.browser.fromPixels(image).toFloat();
+
+            // Normalizar a imagem
+            const normalizedImage = imageTensor.div(255.0).expandDims(0);
+
+            const kernel = createEdgeDetectionKernel();
+
+            // Aplicar convolução
+            const convoluted = tf.conv2d(normalizedImage, kernel, 1, 'same');
+
+            // Remover dimensões extras
+            const result = convoluted.squeeze().clipByValue(0, 255).toInt();
+
+            // Converter o resultado para pixels e desenhar no canvas
+            const resultArray = await result.array();
+            const resultImageData = new ImageData(image.width, image.height);
+
+            for (let y = 0; y < resultImageData.height; y++) {
+                for (let x = 0; x < resultImageData.width; x++) {
+                    const index = (y * resultImageData.width + x) * 4;
+                    const value = resultArray[y][x];
+                    if (value > 200) {
+                        // Bordas: Vermelho
+                        resultImageData.data[index] = 255;
+                        resultImageData.data[index + 1] = 0;
+                        resultImageData.data[index + 2] = 0;
+                        resultImageData.data[index + 3] = 255;
+                    } else if (value > 150) {
+                        // Área Interna: Verde
+                        resultImageData.data[index] = 0;
+                        resultImageData.data[index + 1] = 255;
+                        resultImageData.data[index + 2] = 0;
+                        resultImageData.data[index + 3] = 255;
+                    } else if (value > 100) {
+                        // Área Externa: Azul
+                        resultImageData.data[index] = 0;
+                        resultImageData.data[index + 1] = 0;
+                        resultImageData.data[index + 2] = 255;
+                        resultImageData.data[index + 3] = 255;
+                    } else {
+                        // Fundo: Preto
+                        resultImageData.data[index] = 0;
+                        resultImageData.data[index + 1] = 0;
+                        resultImageData.data[index + 2] = 0;
+                        resultImageData.data[index + 3] = 255;
+                    }
+                }
+            }
+            ctx.putImageData(resultImageData, 0, 0);
+        }
+    </script>
+</body>
+</html>

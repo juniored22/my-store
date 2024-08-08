@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kernel Debugger</title>
+  <style>
+    canvas {
+      margin: 10px;
+      border: 1px solid black;
+    }
+    #controls {
+      margin: 10px;
+    }
+    table {
+      margin-top: 10px;
+    }
+    input[type="number"] {
+      width: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label for="kernelWidth">Kernel Width:</label>
+    <input type="number" id="kernelWidth" value="3" min="1">
+    <label for="kernelHeight">Kernel Height:</label>
+    <input type="number" id="kernelHeight" value="3" min="1">
+    <button onclick="generateKernelTable()">Generate Kernel</button>
+    <div id="kernelTableContainer"></div>
+    <label for="speedRange">Speed (ms):</label>
+    <input type="range" id="speedRange" min="1" max="1000" value="50">
+    <span id="speedValue">50</span> ms
+    <button onclick="applyKernel()">Apply Kernel</button>
+    <div>
+      <label for="debugCheckbox">Debug:</label>
+      <input type="checkbox" id="debugCheckbox">
+    </div>
+  </div>
+  <canvas id="originalCanvas"></canvas>
+  <canvas id="dilationCanvas"></canvas>
+  <script>
+    const originalCanvas = document.getElementById('originalCanvas');
+    const dilationCanvas = document.getElementById('dilationCanvas');
+    const originalCtx = originalCanvas.getContext('2d');
+    const dilationCtx = dilationCanvas.getContext('2d');
+    const speedRange = document.getElementById('speedRange');
+    const speedValue = document.getElementById('speedValue');
+    const debugCheckbox = document.getElementById('debugCheckbox');
+    const kernelWidthInput = document.getElementById('kernelWidth');
+    const kernelHeightInput = document.getElementById('kernelHeight');
+    const kernelTableContainer = document.getElementById('kernelTableContainer');
+
+    speedRange.addEventListener('input', () => {
+      speedValue.textContent = speedRange.value;
+    });
+
+    const img = new Image();
+    img.src = 'img/test2.jpg'; // Substitua pelo caminho da imagem gerada
+    img.onload = () => {
+      originalCanvas.width = dilationCanvas.width = img.width;
+      originalCanvas.height = dilationCanvas.height = img.height;
+      originalCtx.drawImage(img, 0, 0);
+
+      const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+      const grayscaleData = applyGrayscale(imageData);
+      const binaryData = applyThreshold(grayscaleData, 128);
+      dilationCtx.putImageData(binaryData, 0, 0);
+    };
+
+    function applyGrayscale(imageData) {
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        data[i] = avg;
+        data[i + 1] = avg;
+        data[i + 2] = avg;
+      }
+      return imageData;
+    }
+
+    function applyThreshold(imageData, threshold) {
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const value = data[i] > threshold ? 255 : 0;
+        data[i] = value;
+        data[i + 1] = value;
+        data[i + 2] = value;
+      }
+      return imageData;
+    }
+
+    function generateKernelTable() {
+      const width = parseInt(kernelWidthInput.value, 10);
+      const height = parseInt(kernelHeightInput.value, 10);
+      let table = '<table>';
+      for (let i = 0; i < height; i++) {
+        table += '<tr>';
+        for (let j = 0; j < width; j++) {
+          table += `<td><input type="number" value="1" id="kernel-${i}-${j}"></td>`;
+        }
+        table += '</tr>';
+      }
+      table += '</table>';
+      kernelTableContainer.innerHTML = table;
+    }
+
+    function getKernelFromTable() {
+      const width = parseInt(kernelWidthInput.value, 10);
+      const height = parseInt(kernelHeightInput.value, 10);
+      const kernel = [];
+      for (let i = 0; i < height; i++) {
+        const row = [];
+        for (let j = 0; j < width; j++) {
+          row.push(parseFloat(document.getElementById(`kernel-${i}-${j}`).value));
+        }
+        kernel.push(row);
+      }
+      return kernel;
+    }
+
+    function applyKernel() {
+      const kernel = getKernelFromTable();
+      const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+      const grayscaleData = applyGrayscale(imageData);
+      const binaryData = applyThreshold(grayscaleData, 128);
+      applyKernelToImage(binaryData, kernel, 1);
+    }
+
+    function applyKernelToImage(imageData, kernel, iterations) {
+        
+      const width = imageData.width;
+      const height = imageData.height;
+      let data = imageData.data;
+
+      const output = dilationCtx.createImageData(width, height);
+      const outputData = output.data;
+
+      function processPixel(x, y) {
+        let newValue = 0;
+        const kernelHeight = kernel.length;
+        const kernelWidth = kernel[0].length;
+        const halfKernelHeight = Math.floor(kernelHeight / 2);
+        const halfKernelWidth = Math.floor(kernelWidth / 2);
+        
+        for (let ky = -halfKernelHeight; ky <= halfKernelHeight; ky++) {
+          for (let kx = -halfKernelWidth; kx <= halfKernelWidth; kx++) {
+            const xk = x + kx;
+            const yk = y + ky;
+            if (xk >= 0 && xk < width && yk >= 0 && yk < height) {
+              const index = (yk * width + xk) * 4;
+              newValue += data[index] * kernel[ky + halfKernelHeight][kx + halfKernelWidth];
+            }
+          }
+        }
+        return newValue;
+      }
+
+      function dilateStep(step, x, y) {
+        if (step >= iterations) return;
+
+        if (x < width && y < height) {
+          const startTime = performance.now();
+          // Process the current pixel
+          const index = (y * width + x) * 4;
+          const newValue = processPixel(x, y);
+          outputData[index] = newValue;
+          outputData[index + 1] = newValue;
+          outputData[index + 2] = newValue;
+          outputData[index + 3] = data[index + 3]; // Preserve alpha channel
+
+          // Draw the processed part of the image
+          dilationCtx.putImageData(output, 0, 0);
+
+          // Highlight the current kernel position
+          dilationCtx.strokeStyle = 'red';
+          dilationCtx.lineWidth = 2;
+          const halfKernelWidth = Math.floor(kernel[0].length / 2);
+          const halfKernelHeight = Math.floor(kernel.length / 2);
+          dilationCtx.strokeRect(x - halfKernelWidth, y - halfKernelHeight, kernel[0].length, kernel.length);
+
+          const endTime = performance.now();
+          if (debugCheckbox.checked) {
+            console.log(`Processed pixel (${x}, ${y}) in ${endTime - startTime} ms`);
+          }
+
+          // Move to the next pixel
+          setTimeout(() => {
+            let nextX = x + 1;
+            let nextY = y;
+            if (nextX >= width) {
+              nextX = 0;
+              nextY = y + 1;
+            }
+            requestAnimationFrame(() => dilateStep(step, nextX, nextY));
+          }, speedRange.value);
+        } else {
+          // Move to the next iteration if the current one is done
+          requestAnimationFrame(() => dilateStep(step + 1, 0, 0));
+        }
+      }
+
+      // Copy original data to the output
+      for (let i = 0; i < data.length; i++) {
+        outputData[i] = data[i];
+      }
+
+      dilateStep(0, 0, 0);
+    }
+  </script>
+</body>
+</html>

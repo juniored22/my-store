@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Depth Estimation</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/depth-estimation"></script>
+</head>
+<body>
+  <h1>Depth Estimation</h1>
+  <input type="file" id="imageUpload" accept="image/*">
+  <img id="inputImage" style="display:none;">
+  <canvas id="depthCanvas"></canvas>
+
+  <script>
+    async function estimateDepth() {
+      // Load the model
+      const model = await depthEstimation.load();
+
+      // Get the image element
+      const image = document.getElementById('inputImage');
+
+      // Predict depth
+      const depthMap = await model.predict(image);
+
+      // Get canvas context
+      const canvas = document.getElementById('depthCanvas');
+      const context = canvas.getContext('2d');
+
+      // Set canvas size to image size
+      canvas.width = image.width;
+      canvas.height = image.height;
+
+      // Get depth data as an array
+      const depthData = depthMap.dataSync();
+      
+      // Create an ImageData object
+      const imageData = context.createImageData(canvas.width, canvas.height);
+
+      // Map depth values to grayscale
+      for (let i = 0; i < depthData.length; i++) {
+        const value = Math.floor(depthData[i] * 255);
+        imageData.data[i * 4] = value;
+        imageData.data[i * 4 + 1] = value;
+        imageData.data[i * 4 + 2] = value;
+        imageData.data[i * 4 + 3] = 255;
+      }
+
+      // Put the ImageData on the canvas
+      context.putImageData(imageData, 0, 0);
+    }
+
+    // Handle file upload
+    document.getElementById('imageUpload').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const img = document.getElementById('inputImage');
+        img.src = e.target.result;
+        img.onload = estimateDepth;
+      };
+
+      reader.readAsDataURL(file);
+    });
+  </script>
+</body>
+</html>

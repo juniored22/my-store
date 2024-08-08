@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Stereo Example</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Configurar a cena
+        const scene = new THREE.Scene();
+
+        // Configurar a câmera
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        // Configurar o renderizador
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Adicionar um cubo
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        // Adicionar uma luz
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        // Configurar a câmera estéreo
+        const stereoCamera = new THREE.StereoCamera();
+        stereoCamera.aspect = 0.5; // Cada olho verá metade da tela
+
+        // Função de animação
+        function animate() {
+          
+            requestAnimationFrame(animate);
+
+            // Girar o cubo
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+
+            // Atualizar a câmera estéreo
+            stereoCamera.update(camera);
+
+            // Renderizar para o olho esquerdo
+            renderer.setScissorTest(true);
+
+            renderer.setScissor(0, 0, window.innerWidth / 2, window.innerHeight);
+            renderer.setViewport(0, 0, window.innerWidth / 2, window.innerHeight);
+            renderer.render(scene, stereoCamera.cameraL);
+
+            // Renderizar para o olho direito
+            renderer.setScissor(window.innerWidth / 2, 0, window.innerWidth / 2, window.innerHeight);
+            renderer.setViewport(window.innerWidth / 2, 0, window.innerWidth / 2, window.innerHeight);
+            renderer.render(scene, stereoCamera.cameraR);
+
+            // renderer.setScissorTest(false);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Ajustar o tamanho da tela ao redimensionar a janela
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { appSidebarLinkComponent, pieChartLinkComponent, calendarLinkComponent, settingsLinkComponent, logoutComponent, userLinkComponent } from '../components/Menu/index.js';
+import { appSidebarLinkComponent, pieChartLinkComponent, calendarLinkComponent, settingsLinkComponent, logoutComponent, userLinkComponent, faceRecognitionLinkComponent } from '../components/Menu/index.js';
 
 export class AppSidebarModule {
   constructor(myObserver) {
@@ -13,6 +13,7 @@ export class AppSidebarModule {
         ${pieChartLinkComponent}
         ${calendarLinkComponent}
         ${userLinkComponent}
+        ${faceRecognitionLinkComponent}
         ${settingsLinkComponent}
         ${logoutComponent}
       `;

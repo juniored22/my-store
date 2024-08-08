@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcrição de Voz em Português com Dados de Áudio</title>
+</head>
+<body>
+    <button id="startButton">Iniciar Gravação</button>
+    <div id="transcription"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.19.0/dist/tf.min.js"></script>
+    <script>
+
+        function BufferLoader(context, urlList, callback) {
+          this.context = context;
+          this.urlList = urlList;
+          this.onload = callback;
+          this.bufferList = new Array();
+          this.loadCount = 0;
+        }
+
+        BufferLoader.prototype.loadBuffer = function(url, index) {
+          // Load buffer asynchronously
+          var request = new XMLHttpRequest();
+          request.open("GET", url, true);
+          request.responseType = "arraybuffer";
+
+          var loader = this;
+
+          request.onload = function() {
+            // Asynchronously decode the audio file data in request.response
+            loader.context.decodeAudioData(
+              request.response,
+              function(buffer) {
+                if (!buffer) {
+                  alert('error decoding file data: ' + url);
+                  return;
+                }
+                loader.bufferList[index] = buffer;
+                if (++loader.loadCount == loader.urlList.length)
+                  loader.onload(loader.bufferList);
+              },
+              function(error) {
+                console.error('decodeAudioData error', error);
+              }
+            );
+          }
+
+          request.onerror = function() {
+            alert('BufferLoader: XHR error');
+          }
+
+          request.send();
+        }
+
+        BufferLoader.prototype.load = function() {
+          for (var i = 0; i < this.urlList.length; ++i)
+          this.loadBuffer(this.urlList[i], i);
+        }
+
+        class SpeechRecognizer {
+            constructor() {
+                this.endProcess = true;
+                this.transcriptions = [];
+                this.trainingData = [];
+                this.audioChunks = [];
+                this.setupUI();
+                this.setupAudio();
+                this.setupRecognizer();
+                this.bufferLoader();
+            }
+
+            setupUI() {
+                document.getElementById('startButton').addEventListener('click', () => {
+                    this.startListening();
+                    setTimeout(() => this.stopListening(), 5000);
+                });
+                this.transcriptionDiv = document.getElementById('transcription');
+            }
+
+            startListening() {
+                if(this.endProcess){
+                  console.log('Iniciando escuta...');
+                  this.recognizer.start();
+                  this.mediaRecorder.start();
+                  this.endProcess = false;
+                }
+            }
+
+            stopListening() {
+                console.log('Parando escuta...');
+                this.recognizer.stop();
+                this.mediaRecorder.stop();
+            }
+
+            async setupAudio() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log({stream: this.stream});
+                this.mediaRecorder = new MediaRecorder(this.stream);
+
+                this.mediaRecorder.ondataavailable = event => {
+                    console.log({mediaRecorder_ondataavailable: event});
+                    if (event.data.size > 0) this.audioChunks.push(event.data);
+                };
+
+                this.mediaRecorder.onstop = async () => {
+                    console.log({mediaRecorder_onstop_audioChunks: this.audioChunks});
+                    let buffer;
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                    const audioBuffer = await audioBlob.arrayBuffer();
+                    console.log({audioBuffer});
+                    const decodedData = await this.audioContext.decodeAudioData(audioBuffer, (buffer_tmp) => {
+                      buffer = buffer_tmp
+                      this.testAplication(buffer_tmp)
+                    }, console.error);
+                    const rawData = decodedData.getChannelData(0); // Assuming mono audio
+                    const audioUrl = URL.createObjectURL(audioBlob);
+
+                    this.saveTrainingData(rawData, audioBlob, audioUrl, buffer);
+                    this.audioChunks = [];
+                };
+            }
+
+            setupRecognizer() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognizer = new SpeechRecognition();
+                this.recognizer.lang = 'pt-BR';
+                this.recognizer.continuous = false;
+                this.recognizer.interimResults = false;
+
+                this.recognizer.onresult = event => {
+                  console.log({event});
+                  const transcript = event.results[0][0].transcript;
+                  const confidence = event.results[0][0].confidence;
+                  const timestamp = new Date().toISOString();
+
+                  const result = { transcript, confidence, timestamp };
+                  this.transcriptions.push(result);
+                  this.trainingData.push(result);
+
+                  this.updateTranscriptionDiv();
+                  console.log('Reconhecido:', transcript);
+                  console.log('Transcrições:', this.transcriptions);
+                  console.log('Dados de Treinamento:', this.trainingData);
+                };
+
+                this.recognizer.onerror = event => {
+                    console.error('Erro de reconhecimento:', event.error);
+                };
+
+                this.recognizer.onend = () => {
+                    console.log('Reconhecimento encerrado.');
+                };
+            }
+
+            updateTranscriptionDiv() {
+                this.transcriptionDiv.innerHTML = this.transcriptions.map((t, index) => `
+                    <div>
+                        Você disse: ${t.transcript}
+                        <button onclick="document.getElementById('audio-${index}').play()">Reproduzir</button>
+                        <audio id="audio-${index}" src="${t.audioUrl}" controls></audio>
+                    </div>
+                `).join('');
+            }
+
+            saveTrainingData(rawAudioData, audioBlob, audioUrl, buffer) {
+                const lastTranscript = this.transcriptions[this.transcriptions.length - 1];
+                if (lastTranscript) {
+                    lastTranscript.rawAudioData = rawAudioData;
+                    lastTranscript.audioBlob = audioBlob;
+                    lastTranscript.audioUrl = audioUrl;
+                    lastTranscript.buffer = buffer;
+                    lastTranscript.tensor = tf.tensor1d(rawAudioData); 
+                    const min = lastTranscript.tensor.min();
+                    const max = lastTranscript.tensor.max();
+                    lastTranscript.normalizedTensor = lastTranscript.tensor.sub(min).div(max.sub(min)).mul(2).sub(1);
+
+                    this.updateTranscriptionDiv(); // Atualiza a transcrição imediatamente após salvar os dados
+                    console.log('Dados de áudio bruto salvos:', lastTranscript);
+                    this.endProcess = true;
+                }
+            }
+
+            bufferLoader() {
+              this.contextBufferLoader = new (window.AudioContext || window.webkitAudioContext)();
+
+
+              this.bufferLoader = new BufferLoader(this.contextBufferLoader,
+              ['http://localhost:3000/audios/dois_audio_1719879569074.wav', 'http://localhost:3000/audios/um_audio_1719879527763.wav'],
+              (bufferList, time) => console.log('buffers loaded', bufferList)
+              );
+
+              console.log({bufferLoader: this.bufferLoader});
+              this.bufferLoader.load();
+            }
+
+            async testAplication(buffer){
+
+                let view = new Uint8Array(buffer);
+                let rawData = buffer.getChannelData(0); // Pegando dados do primeiro canal
+                let tensor = tf.tensor1d(rawData); // Convertendo os dados de áudio em um tensor
+
+                // Normalizar os dados para o intervalo [0, 1]
+                const min = tensor.min();
+                const max = tensor.max();
+            
+                let normalizedTensor = tensor.sub(min).div(max.sub(min)).mul(2).sub(1);
+                // let normalizedTensor = tensor.sub(tensor.mean()).div(tensor.std());
+
+                // await this.trainModel(normalizedTensor, buffer, tensor);
+
+                console.log({view, rawData, tensor, normalizedTensor});
+
+                this.drawWaveform(rawData);
+
+                var context = new (window.AudioContext || window.webkitAudioContext)();
+
+                console.log({context});
+                
+                var source = context.createBufferSource();
+                var gainNode = context.createGain();
+                var filter = context.createBiquadFilter();// Create the filter
+
+                console.log({source, gainNode});
+              
+                source.buffer = buffer; 
+                source.connect(context.destination);       // connect the source to the context's destination (the speakers)
+
+                /* //gainNode
+                source.connect(gainNode); 
+                gainNode.connect(context.destination);
+                gainNode.gain.value = 0.1;// Reduce the volume.
+                */
+
+                /* //filter
+                source.connect(filter);
+                filter.connect(context.destination);
+                filter.type = 0; // Low-pass filter. See BiquadFilterNode docs
+                filter.frequency.value = 440; // Set cutoff to 440 HZ
+                // Disconnect the source and filter.
+                source.disconnect(0);
+                filter.disconnect(0);
+                */
+              
+
+                source.start();// play the source now
+            }
+
+            drawWaveform(data) {
+              let canvas = document.createElement('canvas');
+              canvas.id = 'audioCanvas';
+              canvas.width = 800;
+              canvas.height = 200;
+              canvas.style.margin = '10px';
+              canvas.style.border = 'solid 1px';
+              canvas.style.padding=  '13px';
+              document.body.appendChild(canvas);
+
+              let ctx = canvas.getContext('2d');
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = 'black';
+
+              ctx.beginPath();
+
+              let sliceWidth = canvas.width / data.length;
+              let x = 0;
+
+              for (let i = 0; i < data.length; i++) {
+                let v = data[i] * 0.5 + 0.5;
+                let y = v * canvas.height;
+
+                if (i === 0) {
+                  ctx.moveTo(x, y);
+                } else {
+                  ctx.lineTo(x, y);
+                }
+
+                x += sliceWidth;
+              }
+
+              ctx.lineTo(canvas.width, canvas.height / 2);
+              ctx.stroke();
+            }
+
+
+            async trainModel() {
+              // Criação de um modelo simples para demonstração
+              const model = tf.sequential();
+
+           
+
+              let labels = this.transcriptions.map(t => t.transcript);
+              let tensors = this.transcriptions.map(t => t.tensor.pad([[0, 16000 - t.rawAudioData.length]]));
+  
+
+              // model.add(tf.layers.dense({inputShape: [tensor.shape[0]], units: 1}));
+              /*
+              model.add(tf.layers.dense({inputShape: [tensor.shape[0]], units: 10, activation: 'relu'}));
+              model.add(tf.layers.dense({units: 1}));
+
+              model.compile({
+                optimizer: tf.train.sgd(0.001), // Reduzindo a taxa de aprendizado
+                loss: 'meanSquaredError'
+                // optimizer: 'sgd',
+                // loss: 'meanSquaredError'
+              });
+              */
+
+                /*
+              model.add(tf.layers.dense({inputShape: [tensor.shape[0]], units: 32, activation: 'relu'}));
+              model.add(tf.layers.dense({units: 16, activation: 'relu'}));
+              model.add(tf.layers.dense({units: 1}));
+
+              model.compile({
+                optimizer: tf.train.adam(0.001), // Usando o otimizador Adam com taxa de aprendizado 0.001
+                loss: 'meanSquaredError'
+              });
+              */
+
+              model.add(tf.layers.dense({ inputShape: [16000], units: 128, activation: 'relu' }));
+              model.add(tf.layers.dense({ units: 64, activation: 'relu' }));
+              model.add(tf.layers.dense({ units: labels.length, activation: 'softmax' }));
+
+              model.compile({
+                optimizer: tf.train.adam(),
+                loss: 'categoricalCrossentropy'
+              });
+
+ 
+
+              /*
+              // Treinando o modelo com os dados de áudio
+              const xs = tensor.reshape([1, tensor.shape[0]]);
+              const ys = tf.tensor2d([[1]]); // Exemplo de saída esperada
+              */
+            
+              
+          
+              // Labels das palavras que queremos reconhecer
+              /*
+              const tensors = recordedBuffers.map(buffer => tf.tensor1d(buffer).pad([[0, 16000 - buffer.length]])); // varios amostras de 1 segundo
+              const xs = tf.stack(tensors); // Empilhar tensores em um tensor 2D
+              const ys = tf.oneHot(tf.tensor1d([0, 1, 2], 'int32'), labels.length); // Exemplo de saídas esperadas
+              */
+
+              const xs = tf.stack(tensors); // Empilhar tensores em um tensor 2D
+              const ys = tf.oneHot(tf.tensor1d(Object.keys(labels), 'int32'), labels.length); // Exemplo de saídas esperadas
+     
+
+              console.log({xs, ys});
+
+              await model.fit(xs, ys, {
+                epochs: 50,
+                callbacks: {
+                  onEpochEnd: (epoch, logs) => {
+                    console.log(`Epoch ${epoch + 1}: loss = ${logs.loss}`);
+                  }
+                }
+              });
+
+              console.log('Modelo treinado');
+
+              await this.recognizeStream(model, labels)
+
+              // await model.save('downloads://meu_modelo_de_audio');
+            }
+
+            async recognizeStream(model, labels) {
+              console.log('Recognizing stream...');
+              if (!model) {
+                console.error('Model not found');
+                return;
+              }
+
+              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+              const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+              const streamSource = audioContext.createMediaStreamSource(stream);
+              const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+              processor.onaudioprocess = async (event) => {
+                const inputBuffer = event.inputBuffer.getChannelData(0);
+                const inputTensor = tf.tensor1d(inputBuffer).pad([[0, 16000 - inputBuffer.length]]);
+                const prediction = model.predict(inputTensor.expandDims(0));
+                const predictedLabel = labels[prediction.argMax(1).dataSync()[0]];
+                console.log('Reconhecido:', predictedLabel);
+              };
+
+              streamSource.connect(processor);
+              processor.connect(audioContext.destination);
+
+            }
+            
+
+            async trainModel_(tensor, buffer) {
+              // Criação de um modelo simples para demonstração
+              const model = tf.sequential();
+
+              console.log({model});
+             
+              return;
+
+              // model.add(tf.layers.dense({inputShape: [tensor.shape[0]], units: 1}));
+              /*
+              model.add(tf.layers.dense({inputShape: [tensor.shape[0]], units: 10, activation: 'relu'}));
+              model.add(tf.layers.dense({units: 1}));
+
+              model.compile({
+                optimizer: tf.train.sgd(0.001), // Reduzindo a taxa de aprendizado
+                loss: 'meanSquaredError'
+                // optimizer: 'sgd',
+                // loss: 'meanSquaredError'
+              });
+              */
+
+
+              model.add(tf.layers.dense({ inputShape: [16000], units: 128, activation: 'relu' }));
+              model.add(tf.layers.dense({ units: 64, activation: 'relu' }));
+              model.add(tf.layers.dense({ units: labels.length, activation: 'softmax' }));
+
+              model.compile({
+                optimizer: tf.train.adam(),
+                loss: 'categoricalCrossentropy'
+              });
+
+              /*
+              model.add(tf.layers.dense({inputShape: [tensor.shape[0]], units: 32, activation: 'relu'}));
+              model.add(tf.layers.dense({units: 16, activation: 'relu'}));
+              model.add(tf.layers.dense({units: 1}));
+
+              model.compile({
+                optimizer: tf.train.adam(0.001), // Usando o otimizador Adam com taxa de aprendizado 0.001
+                loss: 'meanSquaredError'
+              });
+              */
+
+              /*
+              // Labels das palavras que queremos reconhecer
+              const labels = ['teste', 'bom dia', 'boa tarde'];
+              const tensors = recordedBuffers.map(buffer => tf.tensor1d(buffer).pad([[0, 16000 - buffer.length]])); // varios amostras de 1 segundo
+              const xs = tf.stack(tensors); // Empilhar tensores em um tensor 2D
+              const ys = tf.oneHot(tf.tensor1d([0, 1, 2], 'int32'), labels.length); // Exemplo de saídas esperadas
+              */
+
+              // Treinando o modelo com os dados de áudio
+              const xs = tensor.reshape([1, tensor.shape[0]]);
+              const ys = tf.tensor2d([[1]]); // Exemplo de saída esperada
+
+              console.log({xs, ys});
+
+              await model.fit(xs, ys, {
+                epochs: 50,
+                callbacks: {
+                  onEpochEnd: (epoch, logs) => {
+                    console.log(`Epoch ${epoch + 1}: loss = ${logs.loss}`);
+                  }
+                }
+              });
+
+              console.log('Modelo treinado');
+
+              // await model.save('downloads://meu_modelo_de_audio');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.recognizerCustom = new SpeechRecognizer();
+        });
+
+    </script>
+</body>
+</html>

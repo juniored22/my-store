@@ -26,7 +26,7 @@ Main.init((config)=>{
 		if(response.status === 401)showCustomAlert("Error","Usuário ou senha incorreta!", "error");
 		return response.json()
 		})
-		.then(response => response.token && (window.location.href = `${server}/aplication`) )
+		.then(response => response.token && (window.location.href = `${server}/${config[config.build.environment].pageBeforeLogin}`) )
 		.then( () => typeof callback === 'function' && callback())
 		.catch(err => console.warn(err));
 	}

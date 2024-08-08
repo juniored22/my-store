@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Third Person Camera with Physics</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        #menu, #pauseMenu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.8); color: white; z-index: 1; }
+        #characterSelection { display: flex; justify-content: center; gap: 20px; }
+        .characterCard { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .characterCard canvas { margin-bottom: 10px; }
+        #startButton, .pauseButton { padding: 20px 40px; margin: 10px; font-size: 24px; cursor: pointer; background-color: #0077ff; border: none; border-radius: 10px; }
+        #startButton { display: none; }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <div id="characterSelection"></div>
+        <button id="startButton">Start</button>
+    </div>
+    <div id="pauseMenu" style="display: none;">
+        <button class="pauseButton" id="continueButton">Continue</button>
+        <button class="pauseButton" id="restartButton">Restart</button>
+        <button class="pauseButton" id="exitButton">Exit</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/stats-js@1.0.1/build/stats.min.js"></script>
+    <script type="module">
+        import * as THREE from './provider/three.module.js';
+        import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/+esm';
+
+        const stats = new Stats(), keys = {}, enemies = [];
+        let camera, world, player, cameraController, isGameRunning = false, isPaused = false;
+        let selectedCharacter = 'sphere'; // Default character
+        const minimumDistance = 5; // Distância mínima configurável
+
+        document.body.appendChild(stats.dom);
+
+        const characters = [
+            { type: 'sphere', geometry: new THREE.SphereGeometry(1, 32, 32), material: new THREE.MeshStandardMaterial({ color: 0x0077ff }) },
+            { type: 'cube', geometry: new THREE.BoxGeometry(1, 1, 1), material: new THREE.MeshStandardMaterial({ color: 0x0077ff }) },
+            { type: 'cylinder', geometry: new THREE.CylinderGeometry(0.5, 0.5, 2, 32), material: new THREE.MeshStandardMaterial({ color: 0x0077ff }) }
+        ];
+
+        const characterSelection = document.getElementById('characterSelection');
+
+        characters.forEach(character => {
+            const card = document.createElement('div');
+            card.className = 'characterCard';
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(100, 100);
+            card.appendChild(renderer.domElement);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            camera.position.z = 2;
+
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 7.5);
+            scene.add(light);
+
+            const mesh = new THREE.Mesh(character.geometry, character.material);
+            scene.add(mesh);
+
+            renderer.render(scene, camera);
+
+            const label = document.createElement('span');
+            label.textContent = character.type.charAt(0).toUpperCase() + character.type.slice(1);
+            card.appendChild(label);
+
+            card.addEventListener('click', () => {
+                selectedCharacter = character.type;
+                document.getElementById('characterSelection').style.display = 'none';
+                document.getElementById('startButton').style.display = 'block';
+            });
+
+            characterSelection.appendChild(card);
+        });
+
+        document.getElementById('startButton').addEventListener('click', startGame);
+        document.getElementById('continueButton').addEventListener('click', continueGame);
+        document.getElementById('restartButton').addEventListener('click', restartGame);
+        document.getElementById('exitButton').addEventListener('click', exitGame);
+
+        class World {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x87CEEB); // Definir cor de fundo do céu azul claro
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true; // Ativar sombras
+                document.body.appendChild(this.renderer.domElement);
+                this.physicsWorld = new CANNON.World();
+                this.physicsWorld.gravity.set(0, -19.62, 0); // Aumentar a gravidade para fazer o personagem cair mais rápido
+                window.addEventListener('resize', () => this.onWindowResize());
+                this.addLight();
+                this.addGround();
+            }
+            addLight() {
+                const light = new THREE.DirectionalLight(0xffffff, 1);
+                light.position.set(5, 10, 7.5);
+                light.castShadow = true; // Ativar emissão de sombras pela luz
+                light.shadow.mapSize.width = 2048;
+                light.shadow.mapSize.height = 2048;
+                this.scene.add(light);
+            }
+            addGround() {
+                const planeGeometry = new THREE.PlaneGeometry(100, 100);
+                const planeMaterial = new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.5 }); // Usar ShadowMaterial para refletir sombras
+                const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+                plane.rotation.x = -Math.PI / 2;
+                plane.receiveShadow = true; // Configurar para receber sombras
+                plane.material.color.set(0x556B2F); // Alterar a cor do plano para verde escuro
+                this.scene.add(plane);
+
+                const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+                groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+                this.physicsWorld.addBody(groundBody);
+            }
+            onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+            render(camera) { this.renderer.render(this.scene, camera); }
+            updatePhysics(deltaTime) { this.physicsWorld.step(deltaTime); }
+        }
+
+        class Player {
+            constructor(world, characterType) {
+                this.world = world;
+                this.characterType = characterType;
+                this.createCharacter();
+                this.speed = 5;
+                this.runSpeed = 10;
+                this.jumpSpeed = 25; // Aumentar a altura do pulo
+                this.canJump = true;
+                this.hitCooldown = 0;
+                this.defaultColor = 0x0077ff;
+                this.arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), this.mesh.position, 2, 0xff0000);
+                world.scene.add(this.arrowHelper);
+            }
+            createCharacter() {
+                const material = new THREE.MeshStandardMaterial({ color: this.defaultColor });
+                if (this.characterType === 'sphere') {
+                    this.mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), material);
+                    this.body = new CANNON.Body({ mass: 5, shape: new CANNON.Sphere(1), position: new CANNON.Vec3(0, 1, 0) });
+                } else if (this.characterType === 'cube') {
+                    this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
+                    this.body = new CANNON.Body({ mass: 5, shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)), position: new CANNON.Vec3(0, 0.5, 0) });
+                    this.body.fixedRotation = true; // Fixar rotação para cubos NPC
+                } else if (this.characterType === 'cylinder') {
+                    this.mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2, 32), material);
+                    this.body = new CANNON.Body({ mass: 5, shape: new CANNON.Cylinder(0.5, 0.5, 2, 32), position: new CANNON.Vec3(0, 1, 0) });
+                }
+                this.mesh.castShadow = true; // Configurar para emitir sombras
+                this.mesh.position.copy(this.body.position);
+                this.world.scene.add(this.mesh);
+                this.world.physicsWorld.addBody(this.body);
+            }
+            move(keys, yaw) {
+                const velocity = new CANNON.Vec3();
+                const currentSpeed = keys['Shift'] ? this.runSpeed : this.speed;
+                if (keys['w']) { velocity.z -= currentSpeed * Math.cos(yaw); velocity.x -= currentSpeed * Math.sin(yaw); }
+                if (keys['s']) { velocity.z += currentSpeed * Math.cos(yaw); velocity.x += currentSpeed * Math.sin(yaw); }
+                if (keys['a']) { velocity.x -= currentSpeed * Math.cos(yaw); velocity.z += currentSpeed * Math.sin(yaw); }
+                if (keys['d']) { velocity.x += currentSpeed * Math.cos(yaw); velocity.z -= currentSpeed * Math.sin(yaw); }
+                if (keys[' '] && this.canJump) { velocity.y = this.jumpSpeed; this.canJump = false; }
+                this.body.velocity.copy(velocity);
+                this.mesh.position.copy(this.body.position);
+                if (keys['w'] || keys['s'] || keys['a'] || keys['d']) {
+                    this.arrowHelper.setDirection(new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize());
+                    this.arrowHelper.position.copy(this.mesh.position);
+                }
+                if (this.hitCooldown > 0) this.hitCooldown--;
+            }
+            checkHit(hitColor) {
+                if (this.hitCooldown > 0) return;
+                this.mesh.material.color.set(hitColor);
+                this.hitCooldown = 60; // 1 second cooldown at 60 FPS
+                setTimeout(() => {
+                    this.mesh.material.color.set(this.defaultColor);
+                }, 1000);
+            }
+        }
+
+        class Enemy {
+            constructor(world, player, existingEnemies) {
+                this.player = player;
+                this.color = new THREE.Color(Math.random() * 0xffffff); // Cor aleatória para cada inimigo
+                this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: this.color }));
+                this.positionEnemy(existingEnemies);
+                this.mesh.castShadow = true; // Configurar para emitir sombras
+                this.arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), this.mesh.position, 2, this.color);
+                world.scene.add(this.mesh);
+                world.scene.add(this.arrowHelper);
+                this.body = new CANNON.Body({ mass: 1, shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)), position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z) });
+                this.body.fixedRotation = true; // Fixar rotação para cubos NPC
+                world.physicsWorld.addBody(this.body);
+                this.speed = 2;
+                this.isAttacking = Math.random() < 0.5; // 50% chance of attacking
+                this.visionDistance = 10; // Campo de visão dos inimigos
+                this.detectionRadius = new THREE.Mesh(
+                    new THREE.RingGeometry(this.visionDistance, this.visionDistance + 0.1, 32),
+                    new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide })
+                );
+                this.detectionRadius.rotation.x = -Math.PI / 2;
+                this.detectionRadius.position.copy(this.mesh.position);
+                world.scene.add(this.detectionRadius);
+            }
+            positionEnemy(existingEnemies) {
+                let positionOk = false;
+                while (!positionOk) {
+                    this.mesh.position.set(Math.random() * 40 - 20, 0.5, Math.random() * 40 - 20);
+                    positionOk = true;
+                    if (this.mesh.position.distanceTo(this.player.mesh.position) < minimumDistance) {
+                        positionOk = false;
+                        continue;
+                    }
+                    for (let enemy of existingEnemies) {
+                        if (this.mesh.position.distanceTo(enemy.mesh.position) < minimumDistance) {
+                            positionOk = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            update(existingEnemies) {
+                const distanceToPlayer = this.mesh.position.distanceTo(this.player.mesh.position);
+                if (distanceToPlayer < this.visionDistance && this.isInFieldOfView()) {
+                    this.isAttacking = true;
+                }
+
+                if (this.isAttacking) {
+                    const direction = new CANNON.Vec3(
+                        this.player.mesh.position.x - this.body.position.x,
+                        this.player.mesh.position.y - this.body.position.y,
+                        this.player.mesh.position.z - this.body.position.z
+                    );
+                    direction.normalize();
+                    direction.scale(this.speed, direction);
+                    this.body.velocity.copy(direction);
+                } else {
+                    this.body.velocity.set(0, 0, 0);
+                }
+
+                this.avoidOtherEnemies(existingEnemies);
+
+                this.mesh.position.copy(this.body.position);
+                this.mesh.quaternion.copy(this.body.quaternion);
+                this.detectionRadius.position.copy(this.mesh.position);
+
+                const distance = this.mesh.position.distanceTo(this.player.mesh.position);
+                if (this.isAttacking && distance < 1.5) {
+                    this.player.checkHit(this.color);
+                }
+
+                this.arrowHelper.setDirection(this.body.velocity.clone().normalize());
+                this.arrowHelper.position.copy(this.mesh.position);
+            }
+            avoidOtherEnemies(existingEnemies) {
+                for (let otherEnemy of existingEnemies) {
+                    if (otherEnemy !== this) {
+                        const distance = this.mesh.position.distanceTo(otherEnemy.mesh.position);
+                        if (distance < minimumDistance) {
+                            const direction = new CANNON.Vec3(
+                                this.mesh.position.x - otherEnemy.mesh.position.x,
+                                this.mesh.position.y - otherEnemy.mesh.position.y,
+                                this.mesh.position.z - otherEnemy.mesh.position.z
+                            );
+                            direction.normalize();
+                            direction.scale(this.speed, direction);
+                            this.body.velocity.vadd(direction, this.body.velocity);
+                        }
+                    }
+                }
+            }
+            isInFieldOfView() {
+                const directionToPlayer = new THREE.Vector3(
+                    this.player.mesh.position.x - this.mesh.position.x,
+                    this.player.mesh.position.y - this.mesh.position.y,
+                    this.player.mesh.position.z - this.mesh.position.z
+                ).normalize();
+                const enemyDirection = new THREE.Vector3(0, 0, 1).applyQuaternion(this.mesh.quaternion).normalize();
+                const angle = enemyDirection.angleTo(directionToPlayer);
+                return angle < Math.PI / 4; // Verificar se o jogador está dentro de um ângulo de 45 graus
+            }
+        }
+
+        class ThirdPersonCamera {
+            constructor(player) {
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.player = player;
+                this.yaw = 0;
+                this.pitch = 0;
+                this.mouseSensitivity = 0.002;
+                document.addEventListener('mousemove', (event) => this.onMouseMove(event));
+            }
+            onMouseMove(event) {
+                if (document.pointerLockElement) {
+                    this.yaw -= event.movementX * this.mouseSensitivity;
+                    this.pitch -= event.movementY * this.mouseSensitivity;
+                    this.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitch));
+                }
+            }
+            update() {
+                const offset = new THREE.Vector3(0, 2, 5).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
+                this.camera.position.copy(this.player.mesh.position).add(offset);
+                const target = new THREE.Vector3(this.player.mesh.position.x - Math.sin(this.yaw) * Math.cos(this.pitch) * 5, this.player.mesh.position.y + Math.sin(this.pitch) * 5, this.player.mesh.position.z - Math.cos(this.yaw) * Math.cos(this.pitch) * 5);
+                this.camera.lookAt(target);
+            }
+        }
+
+        document.addEventListener('keydown', (event) => { 
+            keys[event.key] = true; 
+            if (event.key.toLowerCase() === 'p') {
+                togglePause();
+            }
+        });
+        document.addEventListener('keyup', (event) => { keys[event.key] = false; if (event.key === ' ') player.canJump = true; });
+
+        function togglePause() {
+            if (isGameRunning) {
+                isPaused = !isPaused;
+                document.getElementById('pauseMenu').style.display = isPaused ? 'flex' : 'none';
+                if (isPaused) {
+                    document.exitPointerLock();
+                } else {
+                    document.body.requestPointerLock();
+                    animate();
+                }
+            }
+        }
+
+        function startGame() {
+            document.getElementById('menu').style.display = 'none';
+            document.body.requestPointerLock();
+            init(); // Inicializar o jogo após a seleção do personagem
+            isGameRunning = true;
+            animate();
+        }
+
+        function continueGame() {
+            togglePause();
+        }
+
+        function restartGame() {
+            isPaused = false;
+            document.getElementById('pauseMenu').style.display = 'none';
+            document.getElementById('menu').style.display = 'flex';
+            isGameRunning = false;
+            enemies.length = 0;
+            startGame();
+        }
+
+        function exitGame() {
+            isPaused = false;
+            document.getElementById('pauseMenu').style.display = 'none';
+            document.getElementById('menu').style.display = 'flex';
+            isGameRunning = false;
+            enemies.length = 0;
+        }
+
+        function init() {
+            world = new World();
+            player = new Player(world, selectedCharacter); // Usar o personagem selecionado
+            cameraController = new ThirdPersonCamera(player);
+            for (let i = 0; i < 10; i++) enemies.push(new Enemy(world, player, enemies));
+        }
+
+        function animate() {
+            if (!isGameRunning || isPaused) return;
+            stats.begin();
+            player.move(keys, cameraController.yaw);
+            cameraController.update();
+            enemies.forEach(enemy => enemy.update(enemies));
+            world.updatePhysics(1 / 60);
+            world.render(cameraController.camera);
+            stats.end();
+            requestAnimationFrame(animate);
+        }
+
+        function reset() {
+            isPaused = false;
+            enemies.length = 0;
+        }
+    </script>
+</body>
+</html>

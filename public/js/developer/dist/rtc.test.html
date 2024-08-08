@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Example</title>
+</head>
+<body>
+    <h1>WebRTC Example</h1>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+    <button id="startButton">Start</button>
+    <button id="callButton">Call</button>
+    <button id="hangupButton">Hang Up</button>
+
+    <script>
+        let localStream;
+        let pc1;
+        let pc2;
+
+        const configuration = {
+            iceServers: [{urls: 'stun:stun.l.google.com:19302'}]
+        };
+
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const startButton = document.getElementById('startButton');
+        const callButton = document.getElementById('callButton');
+        const hangupButton = document.getElementById('hangupButton');
+
+        startButton.onclick = start;
+        callButton.onclick = call;
+        hangupButton.onclick = hangup;
+
+        async function start() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+                localVideo.srcObject = stream;
+                localStream = stream;
+            } catch (err) {
+                console.error('Error accessing media devices.', err);
+            }
+        }
+
+        async function call() {
+            pc1 = new RTCPeerConnection(configuration);
+            pc2 = new RTCPeerConnection(configuration);
+       
+
+            pc1.onicecandidate = (event) => {
+                if (event.candidate) {
+                    pc2.addIceCandidate(event.candidate);
+                }
+            };
+
+            pc2.onicecandidate = (event) => {
+                if (event.candidate) {
+                    pc1.addIceCandidate(event.candidate);
+                }
+            };
+
+            pc2.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+            };
+
+            localStream.getTracks().forEach(track => pc1.addTrack(track, localStream));
+
+            try {
+                const offer = await pc1.createOffer();
+                await pc1.setLocalDescription(offer);
+                await pc2.setRemoteDescription(pc1.localDescription);
+
+                const answer = await pc2.createAnswer();
+                await pc2.setLocalDescription(answer);
+                await pc1.setRemoteDescription(pc2.localDescription);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function hangup() {
+            pc1.close();
+            pc2.close();
+            pc1 = null;
+            pc2 = null;
+        }
+    </script>
+</body>
+</html>

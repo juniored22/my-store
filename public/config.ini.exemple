@@ -1,13 +1,18 @@
 ; Arquivo de configuração
 [build]
 environment = developement
+facebookAuth = true
+facebookAppId = 0000000000
+
 
 [production]
 host = https://exemple.com
 port = 8080
 debugger = false
+pageBeforeLogin = face-recognition
 
 [developement]
 host = http://localhost:3000
 port = 3000
 debugger = false
+pageBeforeLogin = face-recognition

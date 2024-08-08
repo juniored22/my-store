@@ -26,10 +26,16 @@
     "express": "^4.17.1",
     "jsonwebtoken": "^9.0.0",
     "mongodb": "^5.6.0",
-    "realm": "^12.8.1"
+    "multer": "^1.4.5-lts.1",
+    "realm": "^12.8.1",
+    "selfsigned": "^2.4.1",
+    "three": "^0.166.1"
   },
   "devDependencies": {
     "@flydotio/dockerfile": "^0.2.14",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "webpack": "^5.92.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
   }
 }
