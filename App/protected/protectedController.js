@@ -23,6 +23,10 @@ const faceRecognition = (req, res) =>{
     res.sendFile(path.join(staticFilesDirectory, 'FaceRecognationFaceApi.html'));
 }
 
+const mapGame = (req, res) =>{
+    res.sendFile(path.join(staticFilesDirectory, 'map.html'));
+}
+
 const datasetImagesUser = (req, res) =>{
     const userFolder = 'EDGARD';
     const uploadDir = path.join(__dirname, '..', 'uploads', userFolder);
@@ -68,6 +72,7 @@ module.exports = {
     getProtectedData, 
     getProtectedHomePage, 
     page404, 
+    mapGame,
     faceRecognition, 
     datasetImagesUser, 
     uploadsImagesFaceRecognition, 

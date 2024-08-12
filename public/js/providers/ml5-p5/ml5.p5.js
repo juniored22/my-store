@@ -419,7 +419,7 @@ async function  preload() {
 
 
     // load the shader
-   theShader = loadShader('shaders/webcam.vert', 'shaders/webcam.frag');
+//    theShader = loadShader('shaders/webcam.vert', 'shaders/webcam.frag');
    
    
 }

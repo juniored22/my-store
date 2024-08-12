@@ -27,9 +27,23 @@ export const calendarLinkComponent = `
     </a>
 `;
 
+export const mapaLinkComponent = `
+    <a href="/map" class="app-sidebar-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="55" height="40" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+        class="feather feather-map link-icon-css">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6">
+            </polygon>
+            <line x1="8" y1="2" x2="8" y2="18">
+            </line>
+            <line x1="16" y1="6" x2="16" y2="22">
+            </line>
+        </svg>
+    </a>
+`;
+
 export const faceRecognitionLinkComponent = `
     <a href="/face-recognition" class="app-sidebar-link">
-        <svg class="link-icon link-icon-css" style="padding: 7px;box-sizing: content-box;    "   xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-camera">
+        <svg class="link-icon link-icon-css" style="padding: 5px 10px;box-sizing: content-box;"   xmlns="http://www.w3.org/2000/svg" width="17" height="25" viewBox="0 0 25 25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-camera">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
             </path>
             <circle cx="12" cy="13" r="4">

@@ -6,6 +6,7 @@ const { getProtectedData }      = require('./protected/protectedController');
 const { getProtectedHomePage }  = require('./protected/protectedController');
 const { page404 }               = require('./protected/protectedController');
 const { faceRecognition }       = require('./protected/protectedController');
+const { mapGame }               = require('./protected/protectedController');
 const { datasetImagesUser }     = require('./protected/protectedController');
 const { uploadsImagesFaceRecognition } = require('./protected/protectedController');
 const { uploadsImagesFaceRecognitionToTest } = require('./protected/protectedController');
@@ -62,6 +63,7 @@ router.get('/login', sendLoginPage);
 router.all('/404', page404);
 
 router.get('/face-recognition',validateToken,  faceRecognition);
+router.get('/map',validateToken,  mapGame);
 router.get('/list-uploads', datasetImagesUser);
 router.post('/upload', upload.array('faces', 31), uploadsImagesFaceRecognition);
 router.post('/upload-test', uploadFaceTest.array('faces', 31), uploadsImagesFaceRecognitionToTest);
